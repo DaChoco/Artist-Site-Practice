@@ -1,6 +1,6 @@
 import bcrypt
 from jose import JWTError, jwt, ExpiredSignatureError
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 import time
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import Depends, HTTPException, status
@@ -20,12 +20,20 @@ def hashpw(password: str):
     hashed_bytes = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
     return hashed_bytes.decode('utf-8')
 
-def create_access_token(data: dict, expiry_time: timedelta | None):
+def create_access_token(data: dict, expiry_time: timedelta | None = None):
     #expiry time must be in seconds
     to_encode = data.copy()
-    exp = time.time() + (expiry_time or timedelta(minutes=120))
-    to_encode.update({"exp": int(exp)})
-    return jwt.encode(payload=to_encode, key=JWT_SECRET, algorithm=ALGORITHM)
+    exp = datetime.now(tz=timezone.utc) + (expiry_time or timedelta(minutes=120))
+    to_encode.update({"exp": int(exp.timestamp())})
+    
+    try:
+        token = jwt.encode(to_encode, JWT_SECRET, ALGORITHM)
+        return token
+    except JWTError as e:
+        print(e)
+        return None
+
+    
 
 oauth2scheme = OAuth2PasswordBearer(tokenUrl="login")
 

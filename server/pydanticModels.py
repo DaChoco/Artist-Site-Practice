@@ -1,11 +1,13 @@
 from pydantic import BaseModel
+from typing import Optional
+
 
 class User(BaseModel):
     #user signs up - we send this payload
     userID: str
     password: str
-    username: str
-    email: str
+    username: Optional[str]
+    email: Optional[str]
     role: str
 
 class CreateReviewComment(BaseModel):

@@ -16,6 +16,7 @@ from math import ceil
 
 import requests
 import time
+from datetime import timedelta
 
 import pydanticModels
 
@@ -38,9 +39,11 @@ def get_mongo_db(table_name: str):
 
 app = FastAPI()
 
+ORIGINS = ["http://127.0.0.1:5173", "http://localhost:"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins= ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -145,7 +148,7 @@ async def get_user(user: dict = Depends(get_current_user)):
     
     return {"reply": True, "userID": user.get("userID"), "username": user.get("username"), "role": user.get("role")}
     
-@app.post("/api/users/login")
+@app.post("/api/Users/login")
 async def login_user(data: pydanticModels.User, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
 
     if not data:
@@ -171,7 +174,7 @@ async def login_user(data: pydanticModels.User, db: AsyncIOMotorCollection = Dep
         "timeCreated": int(time.time())
     }
 
-    access_token = create_access_token(to_encode_token)
+    access_token = create_access_token(to_encode_token, timedelta(minutes=60))
 
     try:
         result.pop("password", None)
@@ -179,6 +182,8 @@ async def login_user(data: pydanticModels.User, db: AsyncIOMotorCollection = Dep
     except KeyError as e:
         print("The data", result)
         print(e)
+
+    result["_id"] = str(result["_id"])
 
     #userdata is the main field to work with the db in the frontend
     return JSONResponse(content={"message": "Logged in successfully", 
@@ -209,7 +214,8 @@ async def register_user(data: pydanticModels.User, db: AsyncIOMotorCollection = 
                "shopifyData": None
                }
     
-    uploadedData = await db.insert_one(new_doc)
+    result = await db.insert_one(new_doc)
+    uploadedData = await db.find_one({"_id": result.inserted_id})
     
     to_encode_token = {
         "sub": str(uploadedData["_id"]),
@@ -225,6 +231,8 @@ async def register_user(data: pydanticModels.User, db: AsyncIOMotorCollection = 
     except KeyError as e:
         print("The data", uploadedData)
         print(e)
+
+    uploadedData["_id"] = str(uploadedData["_id"])
 
     return JSONResponse(content={"message": "Logged in successfully", 
                                  "token_type": "Bearer", 
