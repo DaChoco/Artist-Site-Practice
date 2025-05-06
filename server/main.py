@@ -15,6 +15,7 @@ from fastapi.responses import JSONResponse
 from math import ceil
 
 import requests
+import time
 
 import pydanticModels
 
@@ -80,6 +81,9 @@ async def add_product(data: pydanticModels.Product, file: UploadFile = File(...)
 
     url = uploadImage(file.file, BUCKET_NAME, file.filename)
 
+    if not url:
+        raise HTTPException(status_code=400, detail="Image Upload Failed")
+    
     new_doc = {
         "title": data.name,
         "desc": data.description,
@@ -115,9 +119,6 @@ async def remove_product(prodID: str, objurl: str, db: AsyncIOMotorCollection = 
     
     return JSONResponse(content={"message": "Successfully deleted.", "items_gone": result.deleted_count})
 
-
-
-
 @app.get("/api/Users/ADMIN/all")
 async def view_users(page: int = 1, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
     skip_value = (page-1)*10
@@ -133,7 +134,106 @@ async def view_users(page: int = 1, db: AsyncIOMotorCollection = Depends(get_mon
 #----------------ADMIN ROUTES
 
 #General use
-from helpers import oauth2scheme, create_access_token, get_current_user
+from helpers import oauth2scheme, create_access_token, get_current_user, hashpw, checkpw
+
+@app.post("/api/credentials/user")
+async def get_user(user: dict = Depends(get_current_user)):
+    if not user:
+        return {"reply": False, "instruction": "The user will sign in normally"}
+    if not user.get("userID"):
+        return {"reply": False, "instruction": "The user will sign in normally"}
+    
+    return {"reply": True, "userID": user.get("userID"), "username": user.get("username"), "role": user.get("role")}
+    
+@app.post("/api/users/login")
+async def login_user(data: pydanticModels.User, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
+
+    if not data:
+        raise HTTPException(status_code=403, detail="Invalid Credentials")
+    result = await db.find_one({"email": data.email})
+
+    if not result:
+        result = await db.find_one({"username": data.username})
+        if not result:
+            raise HTTPException(status_code=404, detail="End user does not exist, they must register")
+
+    #login is only via email or username, so either must work
+
+    hashed_pw = result["password"]
+
+    if not checkpw(data.password, hashed_pw):
+        raise HTTPException(status_code=403, detail="User exists on the system, yet this is an Invalid Username and Password combination")
+
+    #WE STORE THE OBJ ID AS STR. The frontend will not need to convert
+    to_encode_token = {
+        "sub": str(result["_id"]),
+        "username": result["username"],
+        "timeCreated": int(time.time())
+    }
+
+    access_token = create_access_token(to_encode_token)
+
+    try:
+        result.pop("password", None)
+        result.pop("email", None)
+    except KeyError as e:
+        print("The data", result)
+        print(e)
+
+    #userdata is the main field to work with the db in the frontend
+    return JSONResponse(content={"message": "Logged in successfully", 
+                                 "token_type": "Bearer", 
+                                 "access_token": access_token,
+                                 "userdata": result
+                                 },
+                        status_code=200
+                        )
+
+@app.post("/api/Users/register")
+async def register_user(data: pydanticModels.User, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
+
+    if not data:
+        raise HTTPException(status_code=403, detail="Invalid Credentials")
+    
+    result = await db.find_one({"email": data.email})
+
+    if result:
+        raise HTTPException(status_code=409, detail="Account already exists. Please sign in.")
+    
+    new_doc = {"username": data.username, 
+               "password": hashpw(data.password),
+               "role": "user",
+               "email": data.email,
+               "datecreated": int(time.time()),
+               "shopifySignIn": False,
+               "shopifyData": None
+               }
+    
+    uploadedData = await db.insert_one(new_doc)
+    
+    to_encode_token = {
+        "sub": str(uploadedData["_id"]),
+        "username": uploadedData["username"],
+        "timeCreated": int(time.time())
+    }
+
+    access_token = create_access_token(to_encode_token)
+
+    try:
+        uploadedData.pop("password", None)
+        uploadedData.pop("email", None)
+    except KeyError as e:
+        print("The data", uploadedData)
+        print(e)
+
+    return JSONResponse(content={"message": "Logged in successfully", 
+                                 "token_type": "Bearer", 
+                                 "access_token": access_token,
+                                 "userdata": uploadedData
+                                 },
+                        status_code=200
+                        )
+
 
 @app.get("/api/Products/all")
 async def get_all_products(page: int = 1, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):

@@ -20,10 +20,10 @@ def hashpw(password: str):
     hashed_bytes = bcrypt.hashpw(password_bytes, bcrypt.gensalt())
     return hashed_bytes.decode('utf-8')
 
-def create_access_token(data: dict, expiry_time: float | None):
+def create_access_token(data: dict, expiry_time: timedelta | None):
     #expiry time must be in seconds
     to_encode = data.copy()
-    exp = time.time() + (expiry_time or timedelta(minutes=60))
+    exp = time.time() + (expiry_time or timedelta(minutes=120))
     to_encode.update({"exp": int(exp)})
     return jwt.encode(payload=to_encode, key=JWT_SECRET, algorithm=ALGORITHM)
 

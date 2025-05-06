@@ -22,10 +22,12 @@ def uploadImage(image_file, bucket_name: str, file_name):
         s3.upload_fileobj(image_file, bucket_name, f"Random-Art-Fluff-1-001/Random-Art-Fluff/{item_name}")
         print("Upload complete!")
 
+       
         return f"https://{bucket_name}.s3.af-south-1.amazonaws.com/Random-Art-Fluff-1-001/Random-Art-Fluff/{item_name}"
     
     except Exception as e:
         print(str(e))
+        return None
 
 def deleteImage(url:str, bucket:str) -> bool:
     parsed_url = urlparse(url)
