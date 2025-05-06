@@ -8,7 +8,7 @@ import os
 from dotenv import load_dotenv
 
 
-from fastapi import FastAPI, Request, Depends, Query, UploadFile, File, HTTPException
+from fastapi import FastAPI, Request, Depends, Query, UploadFile, File, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
@@ -16,7 +16,7 @@ from math import ceil
 
 import requests
 import time
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 import pydanticModels
 
@@ -223,7 +223,7 @@ async def register_user(data: pydanticModels.User, db: AsyncIOMotorCollection = 
         "timeCreated": int(time.time())
     }
 
-    access_token = create_access_token(to_encode_token)
+    access_token = create_access_token(to_encode_token, timedelta(seconds=3600))
 
     try:
         uploadedData.pop("password", None)
@@ -269,3 +269,56 @@ async def get_product(product_id: str, db: AsyncIOMotorCollection = Depends(get_
         return result
     
     return JSONResponse(content={"message": "Product not returned. Please try again later"}, status_code=404)
+
+@app.post("/api/Products/{product_id}/comments/create")
+async def create_comment(product_id: str,  
+                         data: pydanticModels.CreateReviewComment, 
+                         reviews: AsyncIOMotorCollection = Depends(get_mongo_db("tblreviews")), 
+                         users: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers")),
+                         products: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):
+    #reviewID is basically <timestamp>#<UserID>#<productID>
+    old_object = await products.find_one({"_id": ObjectId(product_id)})
+
+    if not old_object:
+        raise HTTPException(status_code=404, detail="Item does not exist")
+    
+    current_user = await users.find_one({"_id": ObjectId(data.userID)})
+
+    if not current_user:
+        raise HTTPException(status_code=404, detail="User does not exist")
+
+    reviewID = f"{int(time.time())}-{data.userID}-{product_id}"
+
+    new_doc = {
+        "reviewID": reviewID,
+        "username": current_user["username"],
+        "comment": data.comment,
+        "upvotes": 0,
+        "downvotes": 0,
+        "userID": data.userID,
+        "productID": product_id,
+        "createdAt": str(datetime.now())
+    }
+
+    reply = await reviews.insert_one(new_doc)
+
+    comments_cursor = reviews.find({"productID": product_id}).sort("reviewID", -1).limit(10)
+    list_comments = await comments_cursor.to_list(10)
+
+    if not reply.inserted_id:
+        raise HTTPException(status_code=500, detail="Something went wrong")
+    
+    return JSONResponse(content={"message": "Comment created", "comments": list_comments})
+
+@app.get("/api/Products/{product_id}/comments/view")
+async def show_comment(product_id: str, page: int = Query(default=1), reviews: AsyncIOMotorCollection = Depends(get_mongo_db("tblreviews"))):
+    offset = (page-1)*9
+    cursor = reviews.find({"productID": product_id}).skip(offset).sort("reviewID").limit(9)
+
+    comments = await cursor.to_list(9)
+    fixed_comments = [fix_mongo_object_ids(comment) for comment in comments]
+    if not fixed_comments:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not found")
+
+    return fixed_comments
+

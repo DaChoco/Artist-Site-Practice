@@ -4,20 +4,15 @@ from typing import Optional
 
 class User(BaseModel):
     #user signs up - we send this payload
-    userID: str
     password: str
     username: Optional[str]
     email: Optional[str]
-    role: str
 
 class CreateReviewComment(BaseModel):
     #user creates a review comment
-    #reviewID is basically <timestamp>#<UserID>#<productID>
-    reviewID: str
-    productID: str
     userID: str
     comment: str
-    timestamp: str
+ 
 
 class Product(BaseModel):
     #admin creates a product
