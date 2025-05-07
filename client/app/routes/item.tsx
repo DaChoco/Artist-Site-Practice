@@ -8,9 +8,9 @@ export type productType = {
     title: string,
     categories: Array<string>,
     url: string | undefined,
-    stock: Number,
-    price: Number
-    createdAt: Number | null
+    stock: number,
+    price: number
+    createdAt: number | null
 }
 export default function Item(){
     const [art, setArt] = useState<productType | null>(null)
