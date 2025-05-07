@@ -1,29 +1,25 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
 from pymongo.errors import WriteError, NetworkTimeout, DuplicateKeyError
 from pymongo.server_api import ServerApi
-
+#--------------------------------------------------
 from bson import ObjectId
-
 import os
 from dotenv import load_dotenv
-
-
-from fastapi import FastAPI, Request, Depends, Query, UploadFile, File, HTTPException, status
+#-------------------------------------------------------
+from fastapi import FastAPI, Request, Depends, Query, UploadFile, File, HTTPException, status, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-
+#-----------------------------------------------------------
 from math import ceil
-
+#-------------------------------------------------------
 import requests
 import time
 from datetime import timedelta, datetime
-
+#-------------------------------------------
 import pydanticModels
 
 load_dotenv()
-ALBUM_ID = os.getenv("ALBUM")
 BUCKET_NAME = os.getenv("BUCKETNAME")
-
 #---- Mongo Set up
 uri = os.getenv("mongo_connection")
 client = AsyncIOMotorClient(uri, server_api=ServerApi('1'))
@@ -39,7 +35,7 @@ def get_mongo_db(table_name: str):
 
 app = FastAPI()
 
-ORIGINS = ["http://127.0.0.1:5173", "http://localhost:"]
+ORIGINS = ["http://127.0.0.1:5173", "http://localhost:5173"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -62,8 +58,6 @@ async def exception_handler(request: Request, exc: Exception):
         content={"message": f"Internal Server Error: {exc}", "error_path": request.url.path},
     )
 
-
-
 @app.get("/api")
 async def root_route():
     return {"message": "Welcome to the artist site API! Hope you enjoy your stays."}
@@ -74,37 +68,40 @@ from googleauth import get_google_token, upload_bytes_google, add_album_google
 from awsupload import uploadImage, deleteImage
 
 @app.post("/api/Products/ADMIN/Add")
-#Is used for the artist to upload their prints to the site
-async def add_product(data: pydanticModels.Product, file: UploadFile = File(...), db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):
+async def add_product(
+    name: str = Form(...),
+    description: str = Form(default=""),
+    categories: list[str] = Form(...), 
+    price: float = Form(...),
+    stock: int = Form(default=0),
+    file: UploadFile = File(...),
+    db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))
+    ):
     if db is None:
         return {"message": "Database connection error"}
     
-    if not data.name or not file.file:
+    if not name or not file.file:
         return {"message": "Fill in the missing fields"}
 
     url = uploadImage(file.file, BUCKET_NAME, file.filename)
 
     if not url:
         raise HTTPException(status_code=400, detail="Image Upload Failed")
-    
+
     new_doc = {
-        "title": data.name,
-        "desc": data.description,
-        "categories": data.categories,
-        "price": data.price,
+        "title": name,
+        "desc": description,
+        "categories": categories,  
+        "price": price,
         "url": url,
-        "stock": data.stock
-        }
-    
+        "stock": stock}
+
     try:
         await db.insert_one(document=new_doc)
-        return {"message": "Product added successfully"}
-    except DuplicateKeyError as e:
+        return {"message": "Product added successfully", "product": new_doc}
+    except (DuplicateKeyError, WriteError, NetworkTimeout) as e:
         print("The error: ", e)
-        return JSONResponse(content={"message": "Internal Server Error"})
-    except WriteError as e:
-        print("The error: ", e)
-        return JSONResponse(content={"message": "Internal Server Error"})
+        return JSONResponse(content={"message": "Internal Server Error"}, status_code=status.HTTP_502_BAD_GATEWAY)
 
 @app.post("/api/Products/ADMIN/Delete/{prodID}")
 async def remove_product(prodID: str, objurl: str, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):
@@ -137,13 +134,11 @@ async def view_users(page: int = 1, db: AsyncIOMotorCollection = Depends(get_mon
 #----------------ADMIN ROUTES
 
 #General use
-from helpers import oauth2scheme, create_access_token, get_current_user, hashpw, checkpw
+from helpers import oauth2scheme, create_access_token, create_refresh_token, get_current_user, hashpw, checkpw
 
 @app.post("/api/credentials/user")
 async def get_user(user: dict = Depends(get_current_user)):
-    if not user:
-        return {"reply": False, "instruction": "The user will sign in normally"}
-    if not user.get("userID"):
+    if not user or not user.get("userID"):
         return {"reply": False, "instruction": "The user will sign in normally"}
     
     return {"reply": True, "userID": user.get("userID"), "username": user.get("username"), "role": user.get("role")}
@@ -160,7 +155,7 @@ async def login_user(data: pydanticModels.User, db: AsyncIOMotorCollection = Dep
         if not result:
             raise HTTPException(status_code=404, detail="End user does not exist, they must register")
 
-    #login is only via email or username, so either must work
+    #login is only via email or username
 
     hashed_pw = result["password"]
 
@@ -174,11 +169,15 @@ async def login_user(data: pydanticModels.User, db: AsyncIOMotorCollection = Dep
         "timeCreated": int(time.time())
     }
 
-    access_token = create_access_token(to_encode_token, timedelta(minutes=60))
+    access_token = create_access_token(to_encode_token, timedelta(minutes=10))
+    refresh_token = create_refresh_token({"sub": str(result["_id"])})
+
+    await db.update_one(filter={"_id": result["_id"]}, update={"$set": {"refresh_token": refresh_token}})
 
     try:
         result.pop("password", None)
         result.pop("email", None)
+        result.pop("refresh_token", None)
     except KeyError as e:
         print("The data", result)
         print(e)
@@ -189,6 +188,7 @@ async def login_user(data: pydanticModels.User, db: AsyncIOMotorCollection = Dep
     return JSONResponse(content={"message": "Logged in successfully", 
                                  "token_type": "Bearer", 
                                  "access_token": access_token,
+                                 "refresh_token": refresh_token,
                                  "userdata": result
                                  },
                         status_code=200
@@ -242,7 +242,6 @@ async def register_user(data: pydanticModels.User, db: AsyncIOMotorCollection = 
                         status_code=200
                         )
 
-
 @app.get("/api/Products/all")
 async def get_all_products(page: int = 1, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):
     #paginated return of values
@@ -287,7 +286,7 @@ async def create_comment(product_id: str,
     if not current_user:
         raise HTTPException(status_code=404, detail="User does not exist")
 
-    reviewID = f"{int(time.time())}-{data.userID}-{product_id}"
+    reviewID = f"{int(time.time())}#{data.userID}#{product_id}"
 
     new_doc = {
         "reviewID": reviewID,

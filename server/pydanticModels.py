@@ -23,8 +23,6 @@ class Product(BaseModel):
     price: float
     stock: int
 
-
-
 class Order(BaseModel):
     #user orders an artwork
     orderID: str
