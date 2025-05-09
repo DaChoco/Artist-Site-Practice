@@ -1,5 +1,5 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
-from pymongo.errors import WriteError, NetworkTimeout, DuplicateKeyError
+from pymongo.errors import WriteError, NetworkTimeout, DuplicateKeyError, ServerSelectionTimeoutError
 from pymongo.server_api import ServerApi
 #--------------------------------------------------
 from bson import ObjectId
@@ -35,11 +35,11 @@ def get_mongo_db(table_name: str):
 
 app = FastAPI()
 
-ORIGINS = ["http://127.0.0.1:5173", "http://localhost:5173"]
+ORIGINS = ["http://127.0.0.1:5173", "http://localhost:5173", "http://192.0.0.0:5173"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins= ORIGINS,
+    allow_origins= ["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -248,11 +248,14 @@ async def get_all_products(page: int = 1, db: AsyncIOMotorCollection = Depends(g
     if db is None:
         return {"message": "Database connection error"}
     skip_val = (page-1) * 9
-    cursor = db.find().skip(skip_val).sort("createdAt", -1).limit(9)
-    items = await cursor.to_list(length=9)
-    fixed_items = [fix_mongo_object_ids(item) for item in items]
+    try:
+        cursor = db.find().skip(skip_val).sort("createdAt", -1).limit(9)
+        items = await cursor.to_list(length=9)
+        fixed_items = [fix_mongo_object_ids(item) for item in items]
 
-    total_docs = await db.count_documents({})
+        total_docs = await db.count_documents({})
+    except ServerSelectionTimeoutError as e:
+        raise HTTPException(status_code=status.HTTP_504_GATEWAY_TIMEOUT, detail="Request failed")
     total_pages = ceil(total_docs/9)
 
     return JSONResponse(content={"message": "Products returned successfully", "reply": fixed_items, "pages": total_pages}, status_code=200)

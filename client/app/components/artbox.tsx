@@ -25,7 +25,7 @@ export default function ArtBox({artwork}: {artwork: productType}){
 
             const data = await ConvertCurrency(artwork["price"], selectedCurrencies.currentCurrency)
             if (data){
-                setPrices(data)
+                setPrices(Number(data))
             }
 
         }

@@ -1,6 +1,6 @@
 import type { Route } from "./+types/collection";
 import { useSearchParams, Link } from "react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 
 import type { productType } from "./item";
 
@@ -9,6 +9,7 @@ import type { productType } from "./item";
 import ArtBox from "~/components/artbox";
 import Navbar from "~/components/navbar";
 import { FooterPage } from "~/components/footer";
+import { loadingcontext } from "~/contexts/loading";
 
 
 export default function Collection(){
@@ -17,6 +18,8 @@ export default function Collection(){
     const [totalPages, setTotalPages] = useState<number>(1)
 
     const currentPage = searchParams.get("page")
+
+    const loadingcircle = useContext(loadingcontext)
    
     const handleNextPage = ()=>{
         if (!currentPage){
@@ -40,6 +43,14 @@ export default function Collection(){
             try{
                 const response = await fetch(url, {method: "GET"})
                 const data = await response.json()
+
+                if (!data){
+                    throw new Error("The API fetch request has failed")
+                }
+
+                if (data.detail === "Request failed"){
+                    return
+                }
     
                 setArtdata(data["reply"])
                 setTotalPages(data["pages"])
@@ -50,7 +61,9 @@ export default function Collection(){
                 console.log(error)
             }
         }
+        loadingcircle?.setLoading(true)
         handleRetrieveArt()
+        loadingcircle?.setLoading(false)
         
     }, [totalPages])
 
@@ -76,6 +89,11 @@ export default function Collection(){
     }
     return (<>
         <Navbar></Navbar>
+
+        <div id="loading-wrapper">
+            {loadingcircle?.loading && <div className="loading-circle"></div>}
+        </div>
+        
         <main className="w-full max-w-[1000px] w-6/12 mx-auto">
 
             <section id="info" className="p-5 md:p-0">
@@ -86,10 +104,10 @@ export default function Collection(){
 
                     <span className="flex flex-row space-x-1">
                     <p>Filter:</p> 
-                    <select title="filterbox"name="stock" id="instock" onChange={(e) =>handleToggleInStock(e.target.value)}>
-                        <option value="True">In Stock</option>
-                        <option value="False">Out of stock</option>
-                        <option value={"Neither"}>Both</option>
+                    <select title="filterbox"name="stock" id="instock"  onChange={(e) =>handleToggleInStock(e.target.value)}>
+                        <option className="text-slate-950" value="True">In Stock</option>
+                        <option className="text-slate-950" value="False">Out of stock</option>
+                        <option className="text-slate-950" value={"Neither"}>Both</option>
                     </select>
                     </span>
 
@@ -98,7 +116,7 @@ export default function Collection(){
                     <p>Most Recent:</p>
                 </div>
             </section>
-            <section id="art-products" className="artwork-grid grid grid-cols-2 auto-rows-[40vh] max-h-[200vh] md:max-h-[auto] p-5 md:p-0 md:grid-cols-3 md:grid-rows-3 my-5 gap-3">
+            <section id="art-products" className="artwork-grid overflow-hidden grid grid-cols-2 auto-rows-[400px] max-h-[1920px] md:max-h-[300vh] p-5 md:p-0 md:grid-cols-3 md:auto-rows-[400px] my-5 gap-3">
                 {artdata.map((artdata, index) => (<ArtBox key={index} artwork={artdata}></ArtBox>))}
             </section>
 

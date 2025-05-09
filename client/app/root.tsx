@@ -8,6 +8,7 @@ import {
 } from "react-router";
 
 import CurrencySelector from "./contexts/currency";
+import LoadingContextComponent from "./contexts/loading";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -37,7 +38,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <CurrencySelector>
-          {children}
+          <LoadingContextComponent>
+            {children}
+          </LoadingContextComponent>
+          
         </CurrencySelector>
         <ScrollRestoration />
         <Scripts />

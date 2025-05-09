@@ -1,7 +1,8 @@
 
-import { useState, useEffect, useContext } from "react"
+import { useState, useEffect, useContext, use } from "react"
 import { useSearchParams, useParams } from "react-router"
 import { currencyContext } from "~/contexts/currency"
+import { loadingcontext } from "~/contexts/loading"
 import ConvertCurrency from "~/helpers/convert"
 import Navbar from "~/components/navbar"
 import { FooterPage } from "~/components/footer"
@@ -19,23 +20,27 @@ export type productType = {
     sale: boolean | undefined,
     desc: string
 }
+
+
 export default function Item(){
     const [art, setArt] = useState<productType>()
-    const [price, setPrice] = useState<number | undefined>(0)
-    const [loading, setLoading] = useState<boolean>(false)
+    const [price, setPrice] = useState<number>(0)
+
 
     const [searchParams, setSearchParams] = useSearchParams()
     const {productid} = useParams()
 
     const selectedCurrencies = useContext(currencyContext)
+    const loadingcircle = useContext(loadingcontext)
 
-    if (!selectedCurrencies){
+    if (!selectedCurrencies || !loadingcircle){
         throw new Error("No currency context found")
     }
 
     useEffect(()=>{
         const handleRetrieveArtSelected = async ()=>{
-            setLoading(true)
+      
+           
     
             try{
                 if (!productid){
@@ -61,16 +66,18 @@ export default function Item(){
             }
             
         }
-
+        loadingcircle.setLoading(true)
         handleRetrieveArtSelected()
+        loadingcircle.setLoading(false)
 
-        setLoading(false)
 
     },[])
 
     useEffect(()=>{
         const handleConvert = async()=>{
-            setLoading(true)
+            
+         
+       
             if (!art){
 
                 return
@@ -79,12 +86,19 @@ export default function Item(){
             if (!result){
                 return
             }
-            const rounded = result.toFixed(2)
-            setPrice(Number(rounded))
+    
+          
+            
+            setPrice(Number(result.toFixed(2)))
+            
+        
+
         
         }
+        loadingcircle.setLoading(true)
         handleConvert()
-        setLoading(false)
+        loadingcircle.setLoading(false)
+
     },[art, selectedCurrencies.currentCurrency])
 
     return (
@@ -92,7 +106,7 @@ export default function Item(){
     <Navbar></Navbar>
 
     <div id="loading-wrapper">
-        {loading && <div className="loading-circle"></div>}
+        {loadingcircle.loading && <div className="loading-circle"></div>}
     </div>
 
     <main className="h-full my-5">

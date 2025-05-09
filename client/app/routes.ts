@@ -1,5 +1,5 @@
 import { type RouteConfig, index, route, layout, prefix } from "@react-router/dev/routes";
-import CurrencySelector from "./contexts/currency";
+
 
 export default [
     index("routes/home.tsx"),
