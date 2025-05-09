@@ -1,0 +1,7 @@
+[
+    {"countrycode": "RSA", "currency": "ZAR", "symbol": "R"},
+    {"countrycode": "USA", "currency": "USD", "symbol": "$"},
+    {"countrycode": "GBR", "currency": "GBP", "symbol": "£"},
+    {"countrycode": "EUR", "currency": "EUR", "symbol": "€"},
+    {"countrycode": "JPY", "currency": "JPY", "symbol": "¥"}
+]

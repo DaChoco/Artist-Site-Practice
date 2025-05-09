@@ -14,12 +14,12 @@ from math import ceil
 #-------------------------------------------------------
 import requests
 import time
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 #-------------------------------------------
 import pydanticModels
 
 load_dotenv()
-BUCKET_NAME = os.getenv("BUCKETNAME")
+DOMAIN = os.getenv("CLOUDFRONT_DOMAIN")
 #---- Mongo Set up
 uri = os.getenv("mongo_connection")
 client = AsyncIOMotorClient(uri, server_api=ServerApi('1'))
@@ -83,7 +83,7 @@ async def add_product(
     if not name or not file.file:
         return {"message": "Fill in the missing fields"}
 
-    url = uploadImage(file.file, BUCKET_NAME, file.filename)
+    url = uploadImage(file.file, DOMAIN, file.filename)
 
     if not url:
         raise HTTPException(status_code=400, detail="Image Upload Failed")
@@ -108,7 +108,7 @@ async def remove_product(prodID: str, objurl: str, db: AsyncIOMotorCollection = 
     if not prodID:
         return JSONResponse(content={"message": "Invalid request"}, status_code=504)
     
-    aws_reply = deleteImage(objurl, BUCKET_NAME)
+    aws_reply = deleteImage(objurl, DOMAIN)
     if not aws_reply:
         raise HTTPException(status_code=500, detail="Something has gone wrong, please try again later.")
     
@@ -248,7 +248,7 @@ async def get_all_products(page: int = 1, db: AsyncIOMotorCollection = Depends(g
     if db is None:
         return {"message": "Database connection error"}
     skip_val = (page-1) * 9
-    cursor = db.find().skip(skip_val).limit(9)
+    cursor = db.find().skip(skip_val).sort("createdAt", -1).limit(9)
     items = await cursor.to_list(length=9)
     fixed_items = [fix_mongo_object_ids(item) for item in items]
 
@@ -256,6 +256,45 @@ async def get_all_products(page: int = 1, db: AsyncIOMotorCollection = Depends(g
     total_pages = ceil(total_docs/9)
 
     return JSONResponse(content={"message": "Products returned successfully", "reply": fixed_items, "pages": total_pages}, status_code=200)
+
+@app.get("/api/Products/filter/stock")
+async def get_filtered_products_stock(instock: bool | str, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):
+    #We are making this function to extract the products which are fulfilling either. In stock, out of stock or filters by price
+
+    total_pages = 0
+    if instock == "Neither":
+        skip_val = (0) * 9
+        cursor = db.find().skip(skip_val).sort("createdAt", -1).limit(9)
+        items = await cursor.to_list(length=9)
+        fixed_items = [fix_mongo_object_ids(item) for item in items]
+
+        if not fixed_items:
+            fixed_items = []
+
+        total_docs = await db.count_documents({})
+        total_pages = ceil(total_docs/9)
+        return JSONResponse(content={"message": "Products returned successfully", "reply": fixed_items, "pages": total_pages}, status_code=200)
+    #Filter based on if in stock
+    if instock == "True":
+        cursor = db.find({"stock": {"$gt": 0}}).sort("createdAt", -1)
+        items = await cursor.to_list(9)
+        fixed_items = [fix_mongo_object_ids(item) for item in items]
+
+        total_docs = await db.count_documents({"stock": {"$gt": 0}})
+        total_pages = ceil(total_docs/9)
+        return JSONResponse(content={"message": "Products returned successfully", "reply": fixed_items, "pages": total_pages}, status_code=200)
+        
+    elif instock == "False":
+        cursor = db.find({"stock": 0}).sort("createdAt", -1)
+        items = await cursor.to_list(9)
+        fixed_items = [fix_mongo_object_ids(item) for item in items]
+
+        total_docs = await db.count_documents({"stock": 0})
+        total_pages = ceil(total_docs/9)
+        return JSONResponse(content={"message": "Products returned successfully", "reply": fixed_items, "pages": total_pages}, status_code=200)
+        
+    
+    
 
 @app.get("/api/Products/{product_id}")
 async def get_product(product_id: str, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):
@@ -296,7 +335,7 @@ async def create_comment(product_id: str,
         "downvotes": 0,
         "userID": data.userID,
         "productID": product_id,
-        "createdAt": str(datetime.now())
+        "createdAt": str(datetime.now(tz=timezone.utc))
     }
 
     reply = await reviews.insert_one(new_doc)

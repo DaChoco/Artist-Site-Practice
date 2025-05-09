@@ -1,13 +1,22 @@
-import type { Route } from "./+types/home";
-import { Welcome } from "../welcome/welcome";
+import Navbar from "~/components/navbar"
+import { FooterPage } from "~/components/footer"
 
-export function meta({}: Route.MetaArgs) {
-  return [
-    { title: "New React Router App" },
-    { name: "description", content: "Welcome to React Router!" },
-  ];
-}
+
+
 
 export default function Home() {
-  return <Welcome />;
+  return (
+  <>
+  <Navbar></Navbar>
+  <main className="w-full h-full">
+    <section className="hero-section w-full h-[90dvh]">
+        <div className="hero-text">
+            <h1 className="text-5xl font-semibold">Welcome to Jacko's Art</h1>
+            <p className="text-3xl">A collection of art by Jacko</p>
+        </div>
+    </section>
+  </main>
+  <FooterPage></FooterPage>
+  </>
+  )
 }

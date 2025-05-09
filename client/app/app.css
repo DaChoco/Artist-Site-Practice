@@ -1,15 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-sans: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
 }
 
 html,
 body {
-  @apply bg-white dark:bg-gray-950;
+  @apply bg-[var(--background-col)] dark:bg-[var(--dark-background-col)];
 
   @media (prefers-color-scheme: dark) {
     color-scheme: dark;
   }
+}
+
+:root{
+  --background-col: #eeecec;
+  --dark-background-col: #0e0e10;
+  --accent-col: #c21237;
+  --text-col: #1c1b1c;
+  --dark-text-col: #FFF;
+  --topnav-col: #181414;
+  
+}
+
+.children-padding > *{
+  @apply p-4;
 }

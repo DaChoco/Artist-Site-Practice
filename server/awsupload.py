@@ -15,15 +15,15 @@ s3: S3Client = session.client("s3",
                     region_name="af-south-1",
                     endpoint_url="https://s3.af-south-1.amazonaws.com")
 
-def uploadImage(image_file, bucket_name: str, file_name):
+def uploadImage(image_file, domain: str, file_name):
     item_name = f"{datetime.now()}-{uuid.uuid4()}-{file_name}"
     try:
         print("Uploading...")
-        s3.upload_fileobj(image_file, bucket_name, f"Random-Art-Fluff-1-001/Random-Art-Fluff/{item_name}")
+        s3.upload_fileobj(image_file, domain, f"Random-Art-Fluff-1-001/Random-Art-Fluff/{item_name}")
         print("Upload complete!")
 
        
-        return f"https://{bucket_name}.s3.af-south-1.amazonaws.com/Random-Art-Fluff-1-001/Random-Art-Fluff/{item_name}"
+        return f"https://{domain}/Random-Art-Fluff-1-001/Random-Art-Fluff/{item_name}"
     
     except Exception as e:
         print(str(e))
