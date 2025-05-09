@@ -5,9 +5,22 @@ import { useNavigate, Link } from "react-router"
 export default function Navbar(){
     const [showClose, setShowClose] = useState<Boolean>(false)
     const [hideList, setHideList] = useState<Boolean>(false)
+    const [width, setWidth] = useState(0)
+   
     const navigator = useNavigate()
    
+    useEffect(()=>{
 
+        const handleResize = ()=>{
+            setWidth(window.innerWidth)
+            console.log(window.innerWidth)
+        }
+        window.addEventListener("resize", handleResize)
+
+        return ()=>{
+            window.removeEventListener("resize", handleResize)
+        }
+    },[])
 
 
 
@@ -36,7 +49,7 @@ export default function Navbar(){
                 </svg>
             </div>)}
 
-            <ul className={`menuitems flex flex-row space-x-5 ${hideList ? "hidden": "block"}`}>
+            <ul className={` menuitems flex flex-row space-x-5 ${hideList ? "hidden": "flex"}`}>
         
                 <li className="flex items-center font-semibold"><Link to="/about">About</Link></li>
                 <li className="flex items-center font-semibold"><Link to={{"pathname": "/collection/all", "search": "?page=1"}}>Collection</Link></li>

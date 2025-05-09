@@ -1,14 +1,37 @@
 import type { productType } from "~/routes/item";
 import { useNavigate, Link } from "react-router";
+import ConvertCurrency from "~/helpers/convert";
+import { currencyContext } from "~/contexts/currency";
+import { useEffect, useContext, useState, use } from "react";
 
 export default function ArtBox({artwork}: {artwork: productType}){
     const Navigator = useNavigate()
+    const [prices, setPrices] = useState<number>(0)
 
-    function handleCurrency(price: number, ratio: number){
+    function handleCurrency(price: number, ratio: number){ //this is the one for normal ZAR or if API is down
         const new_price = (price * ratio).toFixed(2)
 
         return new_price
     }
+    const selectedCurrencies = useContext(currencyContext)
+
+    if (!selectedCurrencies){
+        throw new Error("No currency context found")
+    }
+
+    
+    useEffect(()=>{
+        const retrieveConvertedValues = async()=>{
+
+            const data = await ConvertCurrency(artwork["price"], selectedCurrencies.currentCurrency)
+            if (data){
+                setPrices(data)
+            }
+
+        }
+
+        retrieveConvertedValues()
+    },[selectedCurrencies.currentCurrency])
 
 
     return(
@@ -25,7 +48,7 @@ export default function ArtBox({artwork}: {artwork: productType}){
             <h3 className="art-title">{artwork["title"]}</h3>
 
             {artwork["sale"] == false || artwork["sale"] == undefined ? ( 
-                <h4 className="art-price">{"R" + handleCurrency(artwork["price"], 1)}</h4>):(<><h4 className="line-through">{"R" + handleCurrency(artwork["price"], 1)}</h4><h4 className="art-price">{"R" + handleCurrency(artwork["price"], 0.7)}</h4></>)}
+                <h4 className="art-price">{selectedCurrencies.currencySymbol + handleCurrency(prices, 1)}</h4>):(<><h4 className="line-through">{selectedCurrencies.currencySymbol + handleCurrency(prices, 1)}</h4><h4 className="art-price">{selectedCurrencies.currencySymbol + handleCurrency(prices, 0.7)}</h4></>)}
            
         </div>
 

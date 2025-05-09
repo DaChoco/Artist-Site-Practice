@@ -1,7 +1,7 @@
 [
-    {"countrycode": "RSA", "currency": "ZAR", "symbol": "R"},
-    {"countrycode": "USA", "currency": "USD", "symbol": "$"},
-    {"countrycode": "GBR", "currency": "GBP", "symbol": "£"},
-    {"countrycode": "EUR", "currency": "EUR", "symbol": "€"},
-    {"countrycode": "JPY", "currency": "JPY", "symbol": "¥"}
+    {"countrycode": "RSA", "currency": "ZAR", "symbol": "R", "name": "Republic of South Africa"},
+    {"countrycode": "USA", "currency": "USD", "symbol": "$", "name": "United States of America"},
+    {"countrycode": "GBR", "currency": "GBP", "symbol": "£", "name": "United Kingdom"},
+    {"countrycode": "EUR", "currency": "EUR", "symbol": "€", "name": "European Union"},
+    {"countrycode": "JPY", "currency": "JPY", "symbol": "¥", "name": "Japan"}
 ]

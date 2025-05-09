@@ -1,6 +1,8 @@
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useContext } from "react"
 import { useSearchParams, useParams } from "react-router"
+import { currencyContext } from "~/contexts/currency"
+import ConvertCurrency from "~/helpers/convert"
 import Navbar from "~/components/navbar"
 import { FooterPage } from "~/components/footer"
 
@@ -19,10 +21,16 @@ export type productType = {
 }
 export default function Item(){
     const [art, setArt] = useState<productType>()
+    const [price, setPrice] = useState<number | undefined>(0)
 
     const [searchParams, setSearchParams] = useSearchParams()
     const {productid} = useParams()
 
+    const selectedCurrencies = useContext(currencyContext)
+
+    if (!selectedCurrencies){
+        throw new Error("No currency context found")
+    }
 
     useEffect(()=>{
         const handleRetrieveArtSelected = async ()=>{
@@ -56,21 +64,38 @@ export default function Item(){
 
     },[])
 
+    useEffect(()=>{
+        const handleConvert = async()=>{
+            if (!art){
+
+                return
+            }
+            const result = await ConvertCurrency(art["price"], selectedCurrencies.currentCurrency)
+            if (!result){
+                return
+            }
+            const rounded = result.toFixed(2)
+            setPrice(Number(rounded))
+        
+        }
+        handleConvert()
+    },[art, selectedCurrencies.currentCurrency])
+
     return (
     <>
     <Navbar></Navbar>
 
     <main className="h-full my-5">
 
-    <section id="art-item" className="grid lg:grid-cols-2 lg:grid-rows-1 md:grid-cols-1 md:grid-rows-2 gap-1 h-[500px] md:h-[90dvh]">
+    <section id="art-item" className="grid lg:grid-cols-2 lg:grid-rows-1 md:grid-cols-1 md:grid-rows-2 gap-1 h-[max-content] p-5 md:p-0 md:h-[90dvh]">
         <div id="img-wrapper" className="relative h-full mx-auto">
         <img className="w-auto h-full object-contain" src={art?.url} alt={art?.title} />
         </div>
 
-        <div id="content-wrapper" className="flex flex-col ">
+        <div id="content-wrapper" className="flex flex-col lg:p-5 ">
     <div>
-        <h1 className="font-semibold text-3xl">{art?.title}</h1>
-        <p className="text-3xl text-[var(--accent-col)]">{art?.price}</p>
+        <h1 className="font-semibold text-3xl">{ art?.title}</h1>
+        <p className="text-3xl text-[var(--accent-col)]">{selectedCurrencies.currencySymbol + price}</p>
     </div>
 
     <div>

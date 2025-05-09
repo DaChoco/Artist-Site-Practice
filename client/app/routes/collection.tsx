@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 
 import type { productType } from "./item";
 
+
+
 import ArtBox from "~/components/artbox";
 import Navbar from "~/components/navbar";
 import { FooterPage } from "~/components/footer";
@@ -76,7 +78,7 @@ export default function Collection(){
         <Navbar></Navbar>
         <main className="w-full max-w-[1000px] w-6/12 mx-auto">
 
-            <section id="info">
+            <section id="info" className="p-5 md:p-0">
                 <h1 className="font-mono text-5xl">Artworks</h1>
                 <p className="font-mono text-slate-900 dark:text-stone-400">These are some of our new artworks that have been produced by Jacko, perhaps take a look, you may find something you like</p>
 
@@ -96,7 +98,7 @@ export default function Collection(){
                     <p>Most Recent:</p>
                 </div>
             </section>
-            <section id="art-products" className="artwork-grid grid grid-cols-3 grid-rows-3 my-5 gap-3">
+            <section id="art-products" className="artwork-grid grid grid-cols-2 auto-rows-[40vh] max-h-[200vh] md:max-h-[auto] p-5 md:p-0 md:grid-cols-3 md:grid-rows-3 my-5 gap-3">
                 {artdata.map((artdata, index) => (<ArtBox key={index} artwork={artdata}></ArtBox>))}
             </section>
 

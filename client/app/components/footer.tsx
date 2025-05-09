@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useContext } from "react";
+import { currencyContext } from "~/contexts/currency";
 
 type countrymap = {
     countrycode: string,
@@ -7,6 +9,12 @@ type countrymap = {
 }
 export function FooterPage(){
     const [countries, setCountries] = useState<Array<countrymap>>()
+
+    const myCurrency = useContext(currencyContext)
+
+    if (!myCurrency){
+        throw new Error("Currency context not found")
+    }
     useEffect(()=>{
         const handlegetmappings = async ()=>{
             const response = await fetch("../../countrymap.json")
@@ -17,6 +25,30 @@ export function FooterPage(){
 
         handlegetmappings()
     },[])
+
+    const {setCurrentCurrency, setCurrencySymbol} = myCurrency
+    
+    const handleToggleCurrency = (e: React.ChangeEvent<HTMLSelectElement>)=>{
+        setCurrentCurrency(e.target.value)
+
+        if (e.target.value === "USD"){
+            setCurrencySymbol("$")
+        }
+        else if (e.target.value === "ZAR"){
+            setCurrencySymbol("R")
+        }
+        else if (e.target.value === "JPY"){
+            setCurrencySymbol("¥")
+        }
+        else if (e.target.value === "EUR"){
+            setCurrencySymbol("€")
+        }
+        else if (e.target.value === "GBP"){
+            setCurrencySymbol("£")
+        }
+        console.log(e.target.value)
+        
+    }
 
     return (
     <footer className="bg-white dark:bg-black p-5" >
@@ -31,7 +63,7 @@ export function FooterPage(){
 
         <div className="currency-select w-[400px]">
             <label htmlFor="currency">Country/Currency</label>
-            <select title="currency" name="currency" id="currency" className="w-full">
+            <select title="currency" name="currency" id="currency" className="w-full" onChange={handleToggleCurrency}>
                 {countries?.map((country, index)=>(
                     <option className="text-black" key={index} value={country.currency}>{country.symbol} | {country.countrycode}</option>
                 ))}
