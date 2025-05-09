@@ -22,6 +22,7 @@ export type productType = {
 export default function Item(){
     const [art, setArt] = useState<productType>()
     const [price, setPrice] = useState<number | undefined>(0)
+    const [loading, setLoading] = useState<boolean>(false)
 
     const [searchParams, setSearchParams] = useSearchParams()
     const {productid} = useParams()
@@ -34,6 +35,7 @@ export default function Item(){
 
     useEffect(()=>{
         const handleRetrieveArtSelected = async ()=>{
+            setLoading(true)
     
             try{
                 if (!productid){
@@ -62,10 +64,13 @@ export default function Item(){
 
         handleRetrieveArtSelected()
 
+        setLoading(false)
+
     },[])
 
     useEffect(()=>{
         const handleConvert = async()=>{
+            setLoading(true)
             if (!art){
 
                 return
@@ -79,11 +84,16 @@ export default function Item(){
         
         }
         handleConvert()
+        setLoading(false)
     },[art, selectedCurrencies.currentCurrency])
 
     return (
     <>
     <Navbar></Navbar>
+
+    <div id="loading-wrapper">
+        {loading && <div className="loading-circle"></div>}
+    </div>
 
     <main className="h-full my-5">
 
