@@ -113,7 +113,7 @@ export default function Item(){
 
     <section id="art-item" className="grid lg:grid-cols-2 lg:grid-rows-1 md:grid-cols-1 md:grid-rows-2 gap-1 h-[max-content] p-5 md:p-0 md:h-[90dvh]">
         <div id="img-wrapper" className="relative h-full mx-auto">
-        <img className="w-auto h-full object-contain" src={art?.url} alt={art?.title} />
+        <img className="w-auto h-full object-contain rounded-xl" src={art?.url} alt={art?.title} />
         </div>
 
         <div id="content-wrapper" className="flex flex-col lg:p-5 ">

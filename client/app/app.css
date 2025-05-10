@@ -26,6 +26,10 @@ body {
 .children-padding > *{
   @apply p-4;
 }
+
+.round-the-children > *{
+  @apply rounded-2xl;
+}
 #loading-wrapper{
   transform: translate(-50%, -50%);
   position: fixed;
@@ -44,6 +48,20 @@ body {
     
 
     
+}
+
+.animate-scroll{
+  animation: scroll 5s linear infinite alternate;
+}
+
+
+@keyframes scroll{
+   0% {
+    transform: translateX(5%);
+  }
+  100% {
+    transform: translateX(-5%);
+  }
 }
 
 @keyframes spin {

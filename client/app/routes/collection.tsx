@@ -1,4 +1,5 @@
 import type { Route } from "./+types/collection";
+import "../app.css"
 import { useSearchParams, Link } from "react-router";
 import { useState, useEffect, useContext } from "react";
 
@@ -94,7 +95,7 @@ export default function Collection(){
             {loadingcircle?.loading && <div className="loading-circle"></div>}
         </div>
         
-        <main className="w-full max-w-[1000px] w-6/12 mx-auto">
+        <main className="w-full max-w-[1000px] mx-auto">
 
             <section id="info" className="p-5 md:p-0">
                 <h1 className="font-mono text-5xl">Artworks</h1>
@@ -122,8 +123,8 @@ export default function Collection(){
 
             <section id="page-pagination-boxes" className="flex flex-row justify-center items-center space-x-5 my-5">
                 {Array.from({length: totalPages}, (_, index) => (
-                    <Link key={index} to={`/collection/all?page=${index + 1}`}>
-                        <div className="page-pagination-box text-center p-[1.5rem] border-black dark:border-white border-3 hover:bg-[var(--accent-col)] hover:text-white">
+                    <Link className="hover:bg-[var(--accent-col)] " key={index} to={`/collection/all?page=${index + 1}`}>
+                        <div className="page-pagination-box text-center p-[1.5rem] border-black dark:border-white border-3  hover:text-white">
                             {index + 1}
                         </div>
                     </Link>
