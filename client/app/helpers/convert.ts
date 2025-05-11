@@ -20,6 +20,11 @@ try{
 
     const data = await response.json()
 
+    if (data["result"] !== "success"){
+        console.warn("API returned an error")
+        return value
+    }
+
     console.log(data)
     //const currency_ratio = data["result"][currency]
     const currency_ratio = data["conversion_rate"]

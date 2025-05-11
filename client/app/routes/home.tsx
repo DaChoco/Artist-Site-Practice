@@ -30,12 +30,12 @@ export default function Home() {
     <>
       <Navbar></Navbar>
       <main className="w-full h-full overflow-hidden">
-        <header id="hero-section" className="text-white bg-center   bg-[url(https://dgyirn4ilc3bc.cloudfront.net/Random-Art-Fluff-1-001/Random-Art-Fluff/IMG_0199.PNG)] bg-cover h-[60vh]">
+        <header id="hero-section" className="text-white bg-center   bg-[url(https://dgyirn4ilc3bc.cloudfront.net/Random-Art-Fluff-1-001/Random-Art-Fluff/IMG_0199-V2.webp)] bg-cover h-[60vh]">
           <div className="flex flex-col items-center justify-center p-5 space-y-2">
             <p className="italic font-semibold">Our site, our experience</p>
             <h1 className="text-5xl font-bold">A love for art?</h1>
             <p>At The Jacko shop, you can browse various illustrations done by him if you would like to get a poster added to your home</p>
-            <button type="button" className="font-['Inter'] bg-[var(--accent-col)]  text-white p-5 font-bold">Explore catalog</button>
+            <Link to={"/collection/all"}><button type="button" className="font-['Inter'] bg-[var(--accent-col)]  text-white p-5 font-bold">Explore catalog</button></Link>
           </div>
         </header>
 

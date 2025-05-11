@@ -296,8 +296,44 @@ async def get_filtered_products_stock(instock: bool | str, db: AsyncIOMotorColle
         total_pages = ceil(total_docs/9)
         return JSONResponse(content={"message": "Products returned successfully", "reply": fixed_items, "pages": total_pages}, status_code=200)
         
+import re
+
+@app.get("/api/Products/Search")
+async def Search_Products(query: str = Query(Default=""), categories: str = Query(Default=""), db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):
+    if not query:
+        return JSONResponse(content={"message": "Invalid request"}, status_code=504)
     
+    regex_arr = re.compile(f'^{re.escape(categories)}', re.IGNORECASE)
+    regex_query = re.compile(f'^{re.escape(query)}', re.IGNORECASE)
     
+    condition = {"$or": [{"title":{"$elemMatch" : {"$regex": regex_query}}}, {"categories":{"$elemMatch" :{"$regex": regex_arr}}}]
+                           }
+    cursor = db.find(condition).sort("createdAt", -1).limit(9)
+    
+    items = await cursor.to_list(9)
+
+    fixed_items = [fix_mongo_object_ids(item) for item in items]
+    total_docs = await db.count_documents(condition)
+    total_pages = ceil(total_docs/9)
+    return JSONResponse(content={"message": "Products returned successfully", "reply": fixed_items, "pages": total_pages}, status_code=200)
+
+@app.get("/api/Products/autocomplete")
+async def AutoComplete(query: str = Query(Default=""), db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):
+    regex= re.compile(f'^{re.escape(query)}', re.IGNORECASE)
+    condition = {"$or": [ {"title": {"$regex": regex}}, {"categories":{"$elemMatch" :{"$regex": regex}}}]}
+    cursor = db.find(condition).sort("createdAt", -1).limit(5)
+    
+    items = await cursor.to_list(5)
+    fixed_items = [fix_mongo_object_ids(item) for item in items]
+
+    #extract only the title
+    title_arr = []
+    item_id_arr = []
+    for index in fixed_items:
+        title_arr.append(index["title"])
+        item_id_arr.append(index["_id"])
+
+    return JSONResponse(content={"message": "Products returned successfully", "reply": title_arr, "itemID": item_id_arr}, status_code=200)
 
 @app.get("/api/Products/{product_id}")
 async def get_product(product_id: str, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):

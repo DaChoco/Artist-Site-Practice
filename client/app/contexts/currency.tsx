@@ -40,10 +40,13 @@ export default function CurrencySelector({children}: {children: React.ReactNode}
                 setCurrentCurrency(data[num].currency)
                 setCountryCode(data[num].countrycode)
                 setCurrencySymbol(data[num].symbol)
+                console.log(data[num].symbol)
 
             }
 
-            if (userCountry === "South Africa" || data.findIndex((item) => {item.name === userCountry}) === -1 || !userCountry ){
+            if (userCountry === "South Africa" || 
+                (data.findIndex((item) => item.name === userCountry) === -1 && !["France", "Spain", "Germany", "Italy", "Portugal", "Ireland"].includes(userCountry)) 
+                || !userCountry ){
                 handleSetStates(0)
                 return
             }

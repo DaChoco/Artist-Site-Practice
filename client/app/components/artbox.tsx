@@ -45,7 +45,7 @@ export default function ArtBox({artwork}: {artwork: productType}){
         </div>
         
         <div className="art-info">
-            <h3 className="art-title font-bold text-xl text-slate-400 dark:text-slate-700">{artwork["title"]}</h3>
+            <h3 className="art-title font-bold text-sm md:text-xl text-slate-400 dark:text-slate-700">{artwork["title"]}</h3>
 
             {artwork["sale"] == false || artwork["sale"] == undefined ? ( 
                 <h4 className="art-price text-2xl">{selectedCurrencies.currencySymbol + handleCurrency(prices, 1)}</h4>):(<><h4 className="line-through text-2xl">{selectedCurrencies.currencySymbol + handleCurrency(prices, 1)}</h4><h4 className="art-price text-2xl">{selectedCurrencies.currencySymbol + handleCurrency(prices, 0.7)}</h4></>)}
