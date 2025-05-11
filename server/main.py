@@ -306,7 +306,7 @@ async def Search_Products(query: str = Query(Default=""), categories: str = Quer
     regex_arr = re.compile(f'^{re.escape(categories)}', re.IGNORECASE)
     regex_query = re.compile(f'^{re.escape(query)}', re.IGNORECASE)
     
-    condition = {"$or": [{"title":{"$elemMatch" : {"$regex": regex_query}}}, {"categories":{"$elemMatch" :{"$regex": regex_arr}}}]
+    condition = {"$or": [{"title":{"$regex": regex_query}}, {"categories":{"$elemMatch" :{"$regex": regex_arr}}}]
                            }
     cursor = db.find(condition).sort("createdAt", -1).limit(9)
     

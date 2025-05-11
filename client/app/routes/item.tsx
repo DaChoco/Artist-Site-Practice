@@ -39,9 +39,6 @@ export default function Item(){
 
     useEffect(()=>{
         const handleRetrieveArtSelected = async ()=>{
-      
-           
-    
             try{
                 if (!productid){
                     throw new Error("No art selected or loaded yet")
@@ -69,9 +66,10 @@ export default function Item(){
         loadingcircle.setLoading(true)
         handleRetrieveArtSelected()
         loadingcircle.setLoading(false)
+        console.log(searchParams)
 
 
-    },[])
+    },[searchParams])
 
     useEffect(()=>{
         const handleConvert = async()=>{
@@ -99,7 +97,7 @@ export default function Item(){
         handleConvert()
         loadingcircle.setLoading(false)
 
-    },[art, selectedCurrencies.currentCurrency])
+    },[art, selectedCurrencies.currentCurrency, searchParams])
 
     return (
     <>
