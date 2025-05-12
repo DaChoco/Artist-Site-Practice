@@ -18,7 +18,9 @@ export type productType = {
     price: number
     createdAt: number | null
     sale: boolean | undefined,
-    desc: string
+    desc: string,
+    size: string,
+    copyright: string
 }
 
 

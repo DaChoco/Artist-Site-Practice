@@ -390,7 +390,7 @@ async def create_comment(product_id: str,
 @app.get("/api/Products/{product_id}/comments/view")
 async def show_comment(product_id: str, page: int = Query(default=1), reviews: AsyncIOMotorCollection = Depends(get_mongo_db("tblreviews"))):
     offset = (page-1)*9
-    cursor = reviews.find({"productID": product_id}).skip(offset).sort("reviewID").limit(9)
+    cursor = reviews.find({"_id": ObjectId(product_id)}).skip(offset).sort("reviewID").limit(9)
 
     comments = await cursor.to_list(9)
     fixed_comments = [fix_mongo_object_ids(comment) for comment in comments]
@@ -398,4 +398,21 @@ async def show_comment(product_id: str, page: int = Query(default=1), reviews: A
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Not found")
 
     return fixed_comments
+
+@app.get("/api/cart/{userID}")
+async def get_cart(userID: str, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
+    result = await db.find_one({"_id": ObjectId(userID)}, {"_id": 0, "cart": 1})
+
+    print(result)
+    try:
+        if result:
+            cart = result["cart"]
+            return JSONResponse(status_code=status.HTTP_200_OK, content=cart)
+        else:
+            return JSONResponse(status_code=500, content="Content fail")
+    except (NetworkTimeout, ServerSelectionTimeoutError) as e:
+        print("Faced exception:", e)
+        return JSONResponse(status_code=status.HTTP_502_BAD_GATEWAY, content={"Error": "INTERNAL SERVER ERROR"})
+
+
 

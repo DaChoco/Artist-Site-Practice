@@ -20,6 +20,8 @@ body {
   --text-col: #1c1b1c;
   --dark-text-col: #FFF;
   --topnav-col: #181414;
+  --light-hover-box-dark: #4b4f4b;
+
   
 }
 
@@ -54,6 +56,18 @@ body {
   animation: scroll 5s linear infinite alternate;
 }
 
+.extendline:hover::after{
+ animation: extend 1s, linear forwards ease-in-out;
+}
+
+@keyframes extend{
+  0%{
+    width: 0%;
+  }
+  100%{
+    width:100%;
+  }
+}
 
 @keyframes scroll{
    0% {

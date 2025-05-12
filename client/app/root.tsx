@@ -9,6 +9,7 @@ import {
 
 import CurrencySelector from "./contexts/currency";
 import LoadingContextComponent from "./contexts/loading";
+import CartContextSelector from "./contexts/cart";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -37,16 +38,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <title>Jacko Collection</title>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        
+
         <Meta />
         <Links />
       </head>
       <body>
         <CurrencySelector>
-          <LoadingContextComponent>
-            {children}
-          </LoadingContextComponent>
-          
+          <CartContextSelector>
+            <LoadingContextComponent>
+              {children}
+            </LoadingContextComponent>
+          </CartContextSelector>
+
         </CurrencySelector>
         <ScrollRestoration />
         <Scripts />

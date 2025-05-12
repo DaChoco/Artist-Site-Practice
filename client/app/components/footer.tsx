@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useContext } from "react";
 import { currencyContext } from "~/contexts/currency";
+import { useCurrencyContext } from "~/contexts/currency";
 
 type countrymap = {
     countrycode: string,
@@ -10,11 +11,8 @@ type countrymap = {
 export function FooterPage(){
     const [countries, setCountries] = useState<Array<countrymap>>()
 
-    const myCurrency = useContext(currencyContext)
+    const {setCurrentCurrency, setCurrencySymbol} = useCurrencyContext()
 
-    if (!myCurrency){
-        throw new Error("Currency context not found")
-    }
     useEffect(()=>{
         const handlegetmappings = async ()=>{
             const response = await fetch("../../countrymap.json")
@@ -26,7 +24,7 @@ export function FooterPage(){
         handlegetmappings()
     },[])
 
-    const {setCurrentCurrency, setCurrencySymbol} = myCurrency
+    
     
     const handleToggleCurrency = (e: React.ChangeEvent<HTMLSelectElement>)=>{
         setCurrentCurrency(e.target.value)

@@ -82,3 +82,13 @@ export default function CurrencySelector({children}: {children: React.ReactNode}
         </currencyContext.Provider>
     )
 }
+
+export function useCurrencyContext(){
+    const context = useContext(currencyContext)
+
+    if (!context){
+        throw new Error("Currency context not found")
+    }
+
+    return context
+}
