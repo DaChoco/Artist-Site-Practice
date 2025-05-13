@@ -4,7 +4,8 @@ export type cartContextState = {
     price: number,
     title: string,
     url: string,
-    createdAt: number
+    createdAt: number,
+    stock: number
 }
 
 type contextgiver = {

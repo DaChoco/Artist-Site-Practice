@@ -4,13 +4,16 @@ import React, { useContext, createContext, useState, useEffect } from "react";
 import Item from "~/routes/item";
 import findCountry from "~/helpers/findLocale";
 
-type currencyContextType = {
-    currentCurrency: string,
-    setCurrentCurrency: React.Dispatch<React.SetStateAction<string>>,
-    countryCode: string,
-    setCountryCode: React.Dispatch<React.SetStateAction<string>>,
-    currencySymbol: string,
-    setCurrencySymbol: React.Dispatch<React.SetStateAction<string>>
+
+type countryDropdownTyping = {
+    url: string
+    name: string
+}
+
+type statesType = {
+    url: string
+    name: string
+
 }
 
 type CountryData = {
@@ -18,19 +21,48 @@ type CountryData = {
   currency: string;
   countrycode: string;
   symbol: string;
+  url: string;
+  states: Array<statesType>
 };
+
+type currencyContextType = {
+    currentCurrency: string,
+    setCurrentCurrency: React.Dispatch<React.SetStateAction<string>>,
+    countryCode: string,
+    setCountryCode: React.Dispatch<React.SetStateAction<string>>,
+    currencySymbol: string,
+    setCurrencySymbol: React.Dispatch<React.SetStateAction<string>>,
+    countrydropdown: countryDropdownTyping[],
+    setCountrydropdown: React.Dispatch<React.SetStateAction<countryDropdownTyping[]>>,
+}
+
+
 export const currencyContext = createContext<currencyContextType| undefined>(undefined)
 
 export default function CurrencySelector({children}: {children: React.ReactNode}){
     const [currentCurrency, setCurrentCurrency] = useState<string>("ZAR")
     const [countryCode, setCountryCode] = useState<string>("ZA")
     const [currencySymbol, setCurrencySymbol] = useState<string>("R")
+    const [countrydropdown, setCountrydropdown] = useState<countryDropdownTyping[]>([])
 
     useEffect(()=>{
         const handlesetDefaultCurrency = async ()=>{
             const response = await fetch("../../countrymap.json")
             const data: CountryData[] = await response.json()
             console.log("Currency Context: ", data)
+
+            let arrDropData = []
+            for (let i = 0; i<data.length; i++){
+                arrDropData.push({name: data[i].name, url: data[i].url})
+                if (data[i].name === "European Union"){
+                    for (let j = 0; j<data[i].states.length; j++){
+                        arrDropData.push({name: data[i].states[j]["name"], url: data[i].states[j]["url"]})
+                    }
+                
+            }
+            }
+            console.log("DROPDOWN: ", arrDropData)
+            setCountrydropdown(arrDropData)
 
             const userCountry: string = await findCountry()
 
@@ -77,7 +109,7 @@ export default function CurrencySelector({children}: {children: React.ReactNode}
     },[])
 
     return(
-        <currencyContext.Provider value={{currentCurrency, setCurrentCurrency, countryCode, setCountryCode, currencySymbol, setCurrencySymbol}}>
+        <currencyContext.Provider value={{currentCurrency, setCurrentCurrency, countryCode, setCountryCode, currencySymbol, setCurrencySymbol, countrydropdown, setCountrydropdown}}>
             {children}
         </currencyContext.Provider>
     )

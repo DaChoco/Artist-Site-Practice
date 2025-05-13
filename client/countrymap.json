@@ -1,7 +1,64 @@
 [
-    {"countrycode": "RSA", "currency": "ZAR", "symbol": "R", "name": "Republic of South Africa"},
-    {"countrycode": "USA", "currency": "USD", "symbol": "$", "name": "United States of America"},
-    {"countrycode": "GBR", "currency": "GBP", "symbol": "£", "name": "United Kingdom"},
-    {"countrycode": "EUR", "currency": "EUR", "symbol": "€", "name": "European Union"},
-    {"countrycode": "JPY", "currency": "JPY", "symbol": "¥", "name": "Japan"}
+  {
+    "countrycode": "RSA",
+    "currency": "ZAR",
+    "symbol": "R",
+    "name": "Republic of South Africa",
+    "taxes": "15%",
+    "url": "https://hatscripts.github.io/circle-flags/flags/za.svg"
+  },
+  {
+    "countrycode": "USA",
+    "currency": "USD",
+    "symbol": "$",
+    "name": "United States of America",
+    "taxes": "50%",
+    "url": "https://hatscripts.github.io/circle-flags/flags/us.svg"
+  },
+  {
+    "countrycode": "GBR",
+    "currency": "GBP",
+    "symbol": "£",
+    "name": "United Kingdom",
+    "taxes": "15%",
+    "url": "https://hatscripts.github.io/circle-flags/flags/uk.svg"
+  },
+  {
+    "countrycode": "EUR",
+    "currency": "EUR",
+    "symbol": "€",
+    "name": "European Union",
+    "taxes": "15%",
+    "url": "https://img.freepik.com/premium-vector/european-union-country-circle-icon-flag-vector-illustration_1254296-4063.jpg",
+    "states": [
+      {
+        "name": "France",
+        "url": "https://hatscripts.github.io/circle-flags/flags/uk.svg"
+      },
+      {
+        "name": "Germany",
+        "url": "https://hatscripts.github.io/circle-flags/flags/de.svg"
+      },
+      {
+        "name": "Spain",
+        "url": "https://hatscripts.github.io/circle-flags/flags/es.svg"
+      },
+      {
+        "name": "Portugal",
+        "url": "https://hatscripts.github.io/circle-flags/flags/pt.svg"
+      },
+      {
+        "name": "Ireland",
+        "url": "https://hatscripts.github.io/circle-flags/flags/ie.svg"
+      }
+    ]
+  },
+  {
+    "countrycode": "JPY",
+    "currency": "JPY",
+    "symbol": "¥",
+    "name": "Japan",
+    "taxes": "25%",
+    "url": "https://hatscripts.github.io/circle-flags/flags/jp.svg"
+  }
 ]

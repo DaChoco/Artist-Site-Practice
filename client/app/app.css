@@ -29,8 +29,16 @@ body {
   @apply p-4;
 }
 
+.children-padding.small > *{
+  @apply p-2;
+}
+
 .round-the-children > *{
   @apply rounded-2xl;
+}
+
+.border-the-kids > *{
+  @apply border-1 bg-[var(--background-col)] ;
 }
 #loading-wrapper{
   transform: translate(-50%, -50%);

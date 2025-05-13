@@ -39,29 +39,27 @@ def create_access_token(data: dict, expiry_time: timedelta | None = None):
         print(e)
         return None
     
-def create_refresh_token(data: dict):
+def create_refresh_token():
 
-    to_encode = data.copy()
-    exp = datetime.now(tz=timezone.utc) + timedelta(days=5)
+    createdAt = datetime.now(tz=timezone.utc)
+    exp = createdAt + timedelta(days=7)
+    my_token = str(f"{uuid.uuid4()}-{createdAt}")
+    #we can use the hash pw to also hash the token since it is just  a string with numbers in it
+    my_token = hashpw(my_token)
 
-    to_encode.update({"exp": int(exp.timestamp())})
-    to_encode.update({"jti": str(uuid.uuid4())})
-    to_encode.update({"type": "refresh"})
-    try:
-        token = jwt.encode(to_encode, JWT_SECRET, ALGORITHM)
-        return token
-    except JWTError as e:
-        print(e)
-        return None
+    #add the whole thing to the MONGODB
+    return {"expires": exp, "token": my_token, "createdAt": createdAt}
+
 
     
-def validate_token(token: dict):
-    try:
-        payload = jwt.decode(token, JWT_SECRET, ALGORITHM)
-        return payload
-    except (JWTError, TypeError):
-        return None
+def validate_refresh_token(token: str, hashed_token: str, expires: int):
+    if not checkpw(token, hashed_token):
+        return False
     
+    if time.time() > expires:
+        return False
+    
+    return True
 
 oauth2scheme = OAuth2PasswordBearer(tokenUrl="login")
 
@@ -74,6 +72,7 @@ def get_current_user(token: str = Depends(oauth2scheme)):
         if not payload:
             return {"reply": False}
     except ExpiredSignatureError as e:
+        
         raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid token",

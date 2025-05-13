@@ -9,5 +9,6 @@ export default [
 
     route("about", "routes/about.tsx"),
     route("contact", "routes/contact.tsx"),
+    route("checkout", "routes/checkout.tsx")
     
 ] satisfies RouteConfig;

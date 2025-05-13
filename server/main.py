@@ -134,12 +134,18 @@ async def view_users(page: int = 1, db: AsyncIOMotorCollection = Depends(get_mon
 #----------------ADMIN ROUTES
 
 #General use
-from helpers import oauth2scheme, create_access_token, create_refresh_token, get_current_user, hashpw, checkpw
+from helpers import oauth2scheme, create_access_token, create_refresh_token, get_current_user, hashpw, checkpw, validate_refresh_token
 
 @app.post("/api/credentials/user")
-async def get_user(user: dict = Depends(get_current_user)):
+async def get_user(user: dict = Depends(get_current_user), db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
     if not user or not user.get("userID"):
         return {"reply": False, "instruction": "The user will sign in normally"}
+    
+    the_user_in_db = await db.find_one({"_id": ObjectId(user["userID"])})
+    result = validate_refresh_token(the_user_in_db["refresh_token"]["token"], str(the_user_in_db["_id"]), the_user_in_db["refresh_token"]["expires"])
+    #will accept or deny based on this later
+    print(result)
+
     
     return {"reply": True, "userID": user.get("userID"), "username": user.get("username"), "role": user.get("role")}
     
@@ -170,7 +176,7 @@ async def login_user(data: pydanticModels.User, db: AsyncIOMotorCollection = Dep
     }
 
     access_token = create_access_token(to_encode_token, timedelta(minutes=10))
-    refresh_token = create_refresh_token({"sub": str(result["_id"])})
+    refresh_token = create_refresh_token()
 
     await db.update_one(filter={"_id": result["_id"]}, update={"$set": {"refresh_token": refresh_token}})
 
@@ -401,12 +407,13 @@ async def show_comment(product_id: str, page: int = Query(default=1), reviews: A
 
 @app.get("/api/cart/{userID}")
 async def get_cart(userID: str, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
-    result = await db.find_one({"_id": ObjectId(userID)}, {"_id": 0, "cart": 1})
+    result = await db.find_one({"_id": ObjectId(userID)})
 
-    print(result)
+   
     try:
         if result:
             cart = result["cart"]
+            print(cart)
             return JSONResponse(status_code=status.HTTP_200_OK, content=cart)
         else:
             return JSONResponse(status_code=500, content="Content fail")
