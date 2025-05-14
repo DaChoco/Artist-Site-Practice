@@ -30,3 +30,10 @@ class Order(BaseModel):
     orderDate: str
     totalAmount: float
     status: str
+
+class Cart(BaseModel):
+    itemID: str
+    url: str
+    title: str
+    price: int
+    createdAt: int

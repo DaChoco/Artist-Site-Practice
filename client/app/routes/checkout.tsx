@@ -53,22 +53,22 @@ export default function CheckoutPage() {
 
     
     useEffect(() => {
-        if (country === "Japan") {
+        if (country.toLowerCase() === "Japan".toLowerCase()) {
             setTax(1.25)
         }
         else if (["France", "Spain", "Germany", "Italy", "Portugal", "Ireland"].includes(country)){
             setTax(1.17)
         }
-        else if (country === "United Kingdom"){
+        else if (country.toLowerCase() === "United Kingdom".toLowerCase() || country.toLowerCase() === "UK".toLowerCase()){
             setTax(1.15)
         }
-        else if (country === "United States of America" || country === "USA"){
+        else if (country.toLowerCase() === "United States of America".toLowerCase() || country.toLowerCase() === "USA".toLowerCase()){
             setTax(1.8)
         }
         else if (!country){
             setTax(1.15)
         }
-        else{
+        else if (["China", "Australia", "Brazil", "New Zealand"].includes(country)){
             setTax(1.6)
         }
        
@@ -94,7 +94,7 @@ export default function CheckoutPage() {
         <>
             <Navbar></Navbar>
 
-            <main className=" grid grid-cols-[50%_50%]">
+            <main className=" grid grid-cols-[55%_45%]">
 
                 <div className="enterInfo p-5">
                     <h2 className="text-3xl">How would you like to get your order?</h2>
@@ -117,7 +117,7 @@ export default function CheckoutPage() {
                                 {countrydropdown.length && showcountrydropdown === true && (
 
                                     <ul className="absolute top-full left-0 w-full children-padding small z-50">
-                                        {countrydropdown.map((country, index) => (<li className="bg-white flex flex-row space-x-5" key={index}><img className="w-5 h-5" src={country.url} alt="country-icon" /><p>{country.name}</p></li>))}
+                                        {countrydropdown.map((country, index) => (<li className="dark:bg-[var(--dark-background-col)] dark:border-2 border-[var(--accent-col)] dark:text-[var(--accent-col)] bg-white flex flex-row space-x-5" key={index}><img className="w-5 h-5" src={country.url} alt="country-icon" /><p>{country.name}</p></li>))}
 
 
                                     </ul>

@@ -16,9 +16,16 @@ export default class UserCartService {
     return data;
   }
 
-  async addToCart(productID: string, quantity: number): Promise<cartContextState[]> {
-    const dataBody = { productID: productID, quantity: quantity };
-    const response = await fetch(`${this.baseurl}/cart/${this.userID}/add`, {
+  async addToCart(itemID: string, title: string, price: number, url: string, quantity: number): Promise<cartContextState[]> {
+    const dataBody = { 
+      itemID: itemID, 
+      url: url,
+      title: title,
+      createdAt: Date.now(),
+      price: price
+    };
+    
+    const response = await fetch(`${this.baseurl}/cart/${this.userID}/add?quantity=${quantity}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(dataBody),

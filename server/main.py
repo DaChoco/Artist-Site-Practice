@@ -413,7 +413,6 @@ async def get_cart(userID: str, db: AsyncIOMotorCollection = Depends(get_mongo_d
     try:
         if result:
             cart = result["cart"]
-            print(cart)
             return JSONResponse(status_code=status.HTTP_200_OK, content=cart)
         else:
             return JSONResponse(status_code=500, content="Content fail")
@@ -421,5 +420,47 @@ async def get_cart(userID: str, db: AsyncIOMotorCollection = Depends(get_mongo_d
         print("Faced exception:", e)
         return JSONResponse(status_code=status.HTTP_502_BAD_GATEWAY, content={"Error": "INTERNAL SERVER ERROR"})
 
+@app.post("/api/cart/{userID}/add")
+async def add_cart(userID: str, cart: pydanticModels.Cart, quantity: int = Query(default=1), db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
+    locator = {"_id": ObjectId(userID)}
+    
+    try:
+        result: dict = await db.find_one(locator)
+        print(result)
+        current_cart = result.get("cart")
+        print(current_cart)
+
+        if current_cart == None:
+            current_cart = []
+
+        user_input = {"_id": cart.itemID, 
+                      "url": cart.url, 
+                      "title": cart.title, 
+                      "price": cart.price, 
+                      "createdAt": cart.createdAt,
+                      "stock": quantity
+                      }
+        print(user_input)
+        current_cart.append(user_input)
+        print(current_cart)
+
+        new_values = { "$set": { "cart": current_cart } }
+
+        output = await db.update_one(locator, new_values)
+        print(output)
+        
+        
+
+        return current_cart
+
+
+    except (ServerSelectionTimeoutError, NetworkTimeout) as e:
+        print(e)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Internal Server error")
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="bad gateway")
+
+    
 
 
