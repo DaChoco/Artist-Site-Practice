@@ -68,6 +68,11 @@ body {
  animation: extend 1s, linear forwards ease-in-out;
 }
 
+.paypal-buttons-container {
+  min-height: 45px; /* adjust based on your button height */
+  overflow: hidden;
+}
+
 @keyframes extend{
   0%{
     width: 0%;

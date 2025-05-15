@@ -6,6 +6,7 @@ import { useCurrencyContext } from "~/contexts/currency";
 import { useLoadingContext } from "~/contexts/loading";
 import { useEffect, useState, useRef } from "react";
 import ConvertCurrency from "~/helpers/convert";
+import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
 
 export default function CheckoutPage() {
     const { currentCart, setCurrentCart } = useCartContext()
@@ -17,7 +18,7 @@ export default function CheckoutPage() {
     const [days, setDays] = useState<string>("3 Days")
     const [arrofquantities, setArrofquantities] = useState<Array<number>>([])
 
-    const {loading, setLoading} = useLoadingContext()
+    const { loading, setLoading } = useLoadingContext()
 
 
     useEffect(() => {
@@ -57,6 +58,9 @@ export default function CheckoutPage() {
 
             const data = await ConvertCurrency(sumPrices(), currentCurrency)
             if (data) {
+                if (currentCurrency === "JPY") {
+                    setTotalPrice(Math.floor(Number(data)))
+                }
                 setTotalPrice(Number(data))
             }
 
@@ -123,28 +127,28 @@ export default function CheckoutPage() {
             quantity: 1,
             amount: totalPrice
         }
-        try{
-        const response = await fetch(
-            `http://${import.meta.env.VITE_BACKEND_DOMAIN}:8000/api/payments/Stripe/${'681a59494d22f6c4e0b5d1e6'}`,
-            { 
-                method: "POST", 
-                headers: { "Content-Type": "application/json" }, 
-                body: JSON.stringify(databody) 
-            });
-        if (!response.ok){
+        try {
+            const response = await fetch(
+                `http://${import.meta.env.VITE_BACKEND_DOMAIN}:8000/api/payments/Stripe/${'681a59494d22f6c4e0b5d1e6'}`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(databody)
+                });
+            if (!response.ok) {
+                setLoading(false)
+                throw new Error("The response has failed from either the server or stripe")
+            }
+            const data = await response.json()
             setLoading(false)
-            throw new Error("The response has failed from either the server or stripe")
+            window.location.href = data.url
         }
-        const data = await response.json()
-        setLoading(false)
-        window.location.href = data.url
-        }
-        catch (error){
-        
+        catch (error) {
+
             console.log("Everything failed")
             console.log(error)
         }
-        finally{
+        finally {
             setLoading(false)
         }
 
@@ -155,11 +159,10 @@ export default function CheckoutPage() {
 
 
 
-
     return (
 
         <>
-        
+
             <Navbar></Navbar>
 
             <div id="loading-wrapper">
@@ -271,7 +274,23 @@ export default function CheckoutPage() {
                         </div>
 
                         <button className="bg-purple-600 hover:bg-purple-700 transition-[0.5s] mb-2 w-full text-white p-3" type="button" onClick={handleStripePayment}>Checkout with Stripe</button>
-                        <button className="bg-[var(--accent-col)] w-full text-white p-3" type="button">Checkout with Paypal</button>
+                        <div className="paypal-buttons-container">
+                        <PayPalScriptProvider options={{ clientId: import.meta.env.VITE_CLIENT_ID}}>
+                            <PayPalButtons style={{ layout: "horizontal", shape: "rect"}} createOrder={(_, actions) => {
+                                return actions.order.create({intent: "CAPTURE",
+                                    purchase_units: [
+                                        {
+                                        amount: {
+                                                value: String(totalPrice),
+                                                currency_code: currencySymbol,
+                                            },
+                                            
+                                        },
+                                    ],
+                                });
+                            }} />
+                        </PayPalScriptProvider>
+                        </div>
                     </div>
                 )}
 

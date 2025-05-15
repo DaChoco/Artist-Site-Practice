@@ -37,6 +37,7 @@ export default function Collection() {
         const handleRetrieveArt = async () => {
 
             //----------------------SEARCH BAR: You did this to avoid making a context that would only be on few pages
+            loadingcircle?.setLoading(true)
             const getQuery = searchParams.get("query")
             if (getQuery) {
                 let url = `http://${import.meta.env.VITE_BACKEND_DOMAIN}:8000/api/Products/Search?query=${getQuery}&categories=${getQuery}`
@@ -84,10 +85,13 @@ export default function Collection() {
             catch (error) {
                 console.log(error)
             }
+            finally{
+                loadingcircle?.setLoading(false)
+            }
         }
-        loadingcircle?.setLoading(true)
+     
         handleRetrieveArt()
-        loadingcircle?.setLoading(false)
+        
 
     }, [totalPages, searchParams])
 
