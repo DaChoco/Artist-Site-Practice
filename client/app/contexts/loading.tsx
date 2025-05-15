@@ -1,4 +1,4 @@
-import { createContext, useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 
 
@@ -20,4 +20,14 @@ export default function LoadingContextComponent({children}: {children: React.Rea
     )
 
 
+}
+
+export function useLoadingContext(){
+    const context = useContext(loadingcontext)
+
+    if (!context){
+        throw new Error("Loading context not found")
+    }
+
+    return context
 }

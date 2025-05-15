@@ -25,12 +25,11 @@ class Product(BaseModel):
 
 class Order(BaseModel):
     #user orders an artwork
-    orderID: str
-    userID: str
-    orderDate: str
-    totalAmount: float
-    status: str
-
+    description: str
+    amount: float
+    currency: str
+    quantity: int
+    cart: list
 class Cart(BaseModel):
     itemID: str
     url: str

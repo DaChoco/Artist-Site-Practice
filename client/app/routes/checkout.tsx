@@ -3,6 +3,7 @@ import { FooterPage } from "~/components/footer";
 import { useCartContext } from "~/contexts/cart";
 import UserCartService from "~/helpers/cartHandle";
 import { useCurrencyContext } from "~/contexts/currency";
+import { useLoadingContext } from "~/contexts/loading";
 import { useEffect, useState, useRef } from "react";
 import ConvertCurrency from "~/helpers/convert";
 
@@ -13,9 +14,12 @@ export default function CheckoutPage() {
     const [showcountrydropdown, setShowcountrydropdown] = useState<boolean>(false)
     const [country, setCountry] = useState<string>("")
     const [tax, setTax] = useState<number>(1.15)
+    const [days, setDays] = useState<string>("3 Days")
     const [arrofquantities, setArrofquantities] = useState<Array<number>>([])
 
- 
+    const {loading, setLoading} = useLoadingContext()
+
+
     useEffect(() => {
         //retrieve carts
         const handleRetrieveCart = async () => {
@@ -23,17 +27,27 @@ export default function CheckoutPage() {
             const output = await cart.getCart()
             console.log(output)
             setCurrentCart(output)
+
+            let quantities = output.map((item) => item.stock)
+            setArrofquantities(quantities)
         }
 
         handleRetrieveCart()
     }, [currentCurrency])
 
-    function sumPrices() {
+    function sumPrices(): number {
+
+        if (!currentCart) {
+            return 0
+        }
         let pricesResult: number = 0;
         for (let i = 0; i < currentCart.length; i++) {
-            pricesResult += currentCart[i].price
+            let currentValue = currentCart[i].price
+            pricesResult += currentValue * arrofquantities[i]
 
         }
+
+
 
         return pricesResult
     }
@@ -49,37 +63,90 @@ export default function CheckoutPage() {
         }
 
         retrieveConvertedValues()
-    }, [currentCurrency])
+    }, [currentCurrency, currentCart, arrofquantities])
 
-    
+
     useEffect(() => {
         if (country.toLowerCase() === "Japan".toLowerCase()) {
             setTax(1.25)
+            setDays("7 Business Days")
         }
-        else if (["France", "Spain", "Germany", "Italy", "Portugal", "Ireland"].includes(country)){
+        else if (["France", "Spain", "Germany", "Italy", "Portugal", "Ireland"].includes(country)) {
             setTax(1.17)
+            setDays("3 Business Days")
         }
-        else if (country.toLowerCase() === "United Kingdom".toLowerCase() || country.toLowerCase() === "UK".toLowerCase()){
+        else if (country.toLowerCase() === "United Kingdom".toLowerCase() || country.toLowerCase() === "UK".toLowerCase()) {
             setTax(1.15)
+            setDays("2 Business Days")
         }
-        else if (country.toLowerCase() === "United States of America".toLowerCase() || country.toLowerCase() === "USA".toLowerCase()){
+        else if (country.toLowerCase() === "United States of America".toLowerCase() || country.toLowerCase() === "USA".toLowerCase()) {
             setTax(1.8)
+            setDays("15 Business Days")
         }
-        else if (!country){
+        else if (!country) {
             setTax(1.15)
+            setDays("At least 16 Business Days")
         }
-        else if (["China", "Australia", "Brazil", "New Zealand"].includes(country)){
+        else if (["China", "Australia", "Brazil", "New Zealand"].includes(country)) {
             setTax(1.6)
+            setDays("9 Business Days")
         }
-       
+
     }, [country])
 
-    function numtoPercentage(){
+    function numtoPercentage() {
         let remainder = tax - 1;
         let roundeddown = remainder.toFixed(2)
 
         const onlypercent = roundeddown.substring(2, roundeddown.length)
         return onlypercent
+
+    }
+
+    const handleStripePayment = async () => {
+        setLoading(true)
+        let desc
+        if (!currentCart || !currentCurrency) {
+            return
+        }
+        else if (currentCart.length > 2 && currentCart.length > 0) {
+            desc = "Mutiple art prints and merchandise ordered from the Artist Site"
+        }
+        else if (currentCart.length === 1) {
+            desc = "An Art Print/Merch ordered from the Artist Site"
+        }
+
+        const databody = {
+            cart: currentCart,
+            description: desc,
+            currency: currentCurrency,
+            quantity: 1,
+            amount: totalPrice
+        }
+        try{
+        const response = await fetch(
+            `http://${import.meta.env.VITE_BACKEND_DOMAIN}:8000/api/payments/Stripe/${'681a59494d22f6c4e0b5d1e6'}`,
+            { 
+                method: "POST", 
+                headers: { "Content-Type": "application/json" }, 
+                body: JSON.stringify(databody) 
+            });
+        if (!response.ok){
+            setLoading(false)
+            throw new Error("The response has failed from either the server or stripe")
+        }
+        const data = await response.json()
+        setLoading(false)
+        window.location.href = data.url
+        }
+        catch (error){
+        
+            console.log("Everything failed")
+            console.log(error)
+        }
+        finally{
+            setLoading(false)
+        }
 
     }
 
@@ -92,7 +159,12 @@ export default function CheckoutPage() {
     return (
 
         <>
+        
             <Navbar></Navbar>
+
+            <div id="loading-wrapper">
+                {loading && <div className="loading-circle"></div>}
+            </div>
 
             <main className=" grid grid-cols-[55%_45%]">
 
@@ -111,8 +183,8 @@ export default function CheckoutPage() {
 
                             <div className="border-2 border-current p-2 flex flex-row justify-between">
 
-                                <input value={country}  onChange={(e)=>{setCountry(e.target.value)}}   type="text" id="countryselect" className="outline-none w-[90%]" />
-                                <svg onClick={()=> setShowcountrydropdown(!showcountrydropdown)} className="fill-current w-10 h-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z" /></svg>
+                                <input value={country} onChange={(e) => { setCountry(e.target.value) }} type="text" id="countryselect" className="outline-none w-[90%]" />
+                                <svg onClick={() => setShowcountrydropdown(!showcountrydropdown)} className="fill-current w-10 h-10" xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z" /></svg>
 
                                 {countrydropdown.length && showcountrydropdown === true && (
 
@@ -194,11 +266,12 @@ export default function CheckoutPage() {
                         <div className="final-costs space-y-2">
                             <span className="flex flex-row justify-between text-2xl"><h5>Subtotal:</h5> <p>{currencySymbol} {totalPrice.toFixed(2)}</p></span>
                             <span className="flex flex-row justify-between text-2xl"><h5>Taxes:</h5> <p>{numtoPercentage()}%</p></span>
-                            <span className="flex flex-row justify-between text-2xl"><h5>Shipping:</h5> <p>Add your address</p></span>
+                            <span className="flex flex-row justify-between text-2xl"><h5>Shipping:</h5> <p>{days}</p></span>
                             <span className="flex flex-row justify-between text-2xl"><h5>Total:</h5> <p>{currencySymbol} {(totalPrice * tax).toFixed(2)}</p></span>
                         </div>
 
-                        <button className="bg-[var(--accent-col)] w-full text-white p-3" type="button">Continue to Checkout</button>
+                        <button className="bg-purple-600 hover:bg-purple-700 transition-[0.5s] mb-2 w-full text-white p-3" type="button" onClick={handleStripePayment}>Checkout with Stripe</button>
+                        <button className="bg-[var(--accent-col)] w-full text-white p-3" type="button">Checkout with Paypal</button>
                     </div>
                 )}
 

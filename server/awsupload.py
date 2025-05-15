@@ -29,6 +29,13 @@ def uploadImage(image_file, domain: str, file_name):
         print(str(e))
         return None
 
+def generate_presigned_upload(item_name: str, bucket_name: str):
+    url = s3.generate_presigned_url("put_object", Params={'Bucket': bucket_name, "Key": item_name}, ExpiresIn=360)
+
+    if not url:
+        return ""
+    return url
+
 def deleteImage(url:str, bucket:str) -> bool:
     parsed_url = urlparse(url)
     object_key = parsed_url.path.lstrip("/")

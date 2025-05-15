@@ -1,4 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorCollection
+from pymongo.asynchronous import collection
+from pymongo import AsyncMongoClient
 from pymongo.errors import WriteError, NetworkTimeout, DuplicateKeyError, ServerSelectionTimeoutError
 from pymongo.server_api import ServerApi
 #--------------------------------------------------
@@ -460,6 +462,36 @@ async def add_cart(userID: str, cart: pydanticModels.Cart, quantity: int = Query
     except Exception as e:
         print(e)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="bad gateway")
+    
+from payments import pay_with_stripe
+@app.post("/api/payments/Stripe/{userID}")
+async def Stripe_Payment(userID: str, data: pydanticModels.Order, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
+
+    iteminfodict = {"quantity": data.quantity, "description": data.description}
+    session_url = pay_with_stripe(data.currency, data.amount, iteminfodict)
+    if not session_url:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something has gone wrong with your payment, please try again later")
+    
+    #--- if the payment goes through we send to mongo
+    locator = {"_id": ObjectId(userID)}
+
+    try:
+        result: dict = await db.find_one(locator)
+        orders: list = result.get("orders")
+        if not orders:
+            orders = []
+        #[{items: [{}], }]
+
+        orders.append({"status": "In Progress", "date": time.time(), "items": data.cart, "price": data.amount})
+        new_values = { "$set": { "orders": orders }}
+        output = await db.update_one(locator, new_values)
+        print(output)
+
+    except NetworkTimeout:
+        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT)
+    
+
+    return {"url": session_url}
 
     
 
