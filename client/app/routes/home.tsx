@@ -4,6 +4,7 @@ import { useState, useEffect } from "react"
 import { Link } from "react-router"
 import type { productType } from "./item"
 import UserCartService from "~/helpers/cartHandle"
+import { Image } from "@imagekit/react"
 
 
 
@@ -123,7 +124,7 @@ export default function Home() {
           </div>
 
           <div id="right-grid">
-            <img className="h-full w-auto mx-auto rounded-xl" src={featured?.url ?? "https://dgyirn4ilc3bc.cloudfront.net/Random-Art-Fluff-1-001/Random-Art-Fluff/3b949068-dd65-4835-a512-a19afab19585.PNG"} alt="A picture of an artwork we sell on this site" />
+            <Image className="h-full w-auto mx-auto rounded-xl" urlEndpoint="https://ik.imagekit.io/gp2sqgkfsChocoChoco"  src={featured?.key ?? "/Random-Art-Fluff/3b949068-dd65-4835-a512-a19afab19585.PNG"} alt="A picture of an artwork we sell on this site" />
 
             {width < 500 && width > 0 ? (<div id="buynow-small" className="flex flex-row space-x-5 text-3xl items-center justify-around font-['Inter'] my-5">
               <p>R{featured?.price ?? "R0.00"}</p> <Link to={`/collection/681b7c4c423ee947ec118c73`} className="bg-[var(--accent-col)] text-white p-5 font-bold">BUY NOW</Link>

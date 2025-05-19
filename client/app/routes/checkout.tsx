@@ -7,6 +7,9 @@ import { useLoadingContext } from "~/contexts/loading";
 import { useEffect, useState, useRef } from "react";
 import ConvertCurrency from "~/helpers/convert";
 import { PayPalButtons, PayPalScriptProvider } from "@paypal/react-paypal-js";
+import { useSearchParams } from "react-router";
+
+let desc = ""
 
 export default function CheckoutPage() {
     const { currentCart, setCurrentCart } = useCartContext()
@@ -17,10 +20,12 @@ export default function CheckoutPage() {
     const [tax, setTax] = useState<number>(1.15)
     const [days, setDays] = useState<string>("3 Days")
     const [arrofquantities, setArrofquantities] = useState<Array<number>>([])
-
     const { loading, setLoading } = useLoadingContext()
 
 
+    const [searchParams, setSearchParams] = useSearchParams()
+
+    
     useEffect(() => {
         //retrieve carts
         const handleRetrieveCart = async () => {
@@ -109,7 +114,7 @@ export default function CheckoutPage() {
 
     const handleStripePayment = async () => {
         setLoading(true)
-        let desc
+        
         if (!currentCart || !currentCurrency) {
             return
         }
@@ -154,10 +159,55 @@ export default function CheckoutPage() {
 
     }
 
+    const handleStoreOrderStripe = async()=>{
+        let sum = 0 //for stripe and how their api works we made quantity one, since we count up how much they buy here, but for our db we can store our quantity
+
+        for (let i = 0; i<currentCart.length; i++){
+            sum += currentCart[i].stock
+        }
+
+        const databody = {
+            cart: currentCart,
+            description: desc,
+            currency: currentCurrency,
+            quantity: sum,
+            amount: totalPrice
+        }
+        try {
+            const response = await fetch(
+                `http://${import.meta.env.VITE_BACKEND_DOMAIN}:8000/api/payments/Stripe/${'681a59494d22f6c4e0b5d1e6'}/store`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(databody)
+                });
+            if (!response.ok) {
+                throw new Error("The response has failed from either the server or stripe")
+            }
+            const data = await response.json()
+            console.log(data)
+ 
+            
+        }
+        catch (error) {
+            console.log("Everything failed")
+            console.log(error)
+        }
 
 
+    }
 
+    useEffect(()=>{
+        if (!searchParams.get("result")){
+            return
+        }
 
+        if (searchParams.get("result") === "success"){
+            handleStoreOrderStripe()
+            setCurrentCart([])
+            
+        }
+    }, [searchParams])
 
     return (
 
@@ -238,7 +288,7 @@ export default function CheckoutPage() {
                         <ul>
                             {currentCart.map((cartitem, index) => (
                                 <li key={index}>
-                                    <div className="grid grid-cols-[150px_300px] grid-rows-1 p-5">
+                                    <div className="grid grid-cols-[150px_300px] grid-rows-[200px] p-4">
 
                                         <img id="left-grid-1" src={cartitem?.url} className="h-auto mx-auto" alt="Something is going wrong" />
 
@@ -276,19 +326,46 @@ export default function CheckoutPage() {
                         <button className="bg-purple-600 hover:bg-purple-700 transition-[0.5s] mb-2 w-full text-white p-3" type="button" onClick={handleStripePayment}>Checkout with Stripe</button>
                         <div className="paypal-buttons-container">
                         <PayPalScriptProvider options={{ clientId: import.meta.env.VITE_CLIENT_ID}}>
-                            <PayPalButtons style={{ layout: "horizontal", shape: "rect"}} createOrder={(_, actions) => {
-                                return actions.order.create({intent: "CAPTURE",
-                                    purchase_units: [
-                                        {
-                                        amount: {
-                                                value: String(totalPrice),
-                                                currency_code: currencySymbol,
+                                <PayPalButtons createOrder={async(_, actions) => {
+                                    let currencyToUse = ""
+                                    let amountToUse = 0
+                                    if (currentCurrency == "ZAR"){
+                                        setCurrentCurrency("USD")
+                                        currencyToUse = "USD"
+                                        
+                                        console.warn("Switching to USD for PayPal as ZAR is not supported.");
+                                        const converted = await ConvertCurrency(totalPrice, "USD")
+                                        if (converted){
+                                            setTotalPrice(converted)
+                                            amountToUse = converted;
+                                        }
+                                        
+                                    }
+                                    else{
+                                        amountToUse = totalPrice
+                                    }
+                                    return actions.order.create({
+                                        intent: "CAPTURE",
+                                        purchase_units: [
+                                            {
+                                                amount: {
+                                                    value: amountToUse.toFixed(2),
+                                                    currency_code: currencyToUse,
+                                                },
+
                                             },
-                                            
-                                        },
-                                    ],
-                                });
-                            }} />
+                                        ],
+                                    });
+                                }} onApprove={async (data, actions) => {
+                                    if (!actions || !actions.order) {
+                                        return
+                                    }
+                                    return actions.order.capture().then((details) => {
+                                        alert(`Transaction Status: ${details.status}, You spent: ${details.purchase_units}`);
+                                    });
+                                }} onCancel={() => { window.location.href = "https://localhost:5173/checkout?result=cancel"; 
+                                            return; }} 
+                                />
                         </PayPalScriptProvider>
                         </div>
                     </div>

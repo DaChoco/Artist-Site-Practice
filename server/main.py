@@ -442,13 +442,15 @@ async def add_cart(userID: str, cart: pydanticModels.Cart, quantity: int = Query
                       "createdAt": cart.createdAt,
                       "stock": quantity
                       }
-        print(user_input)
+ 
+        #store_transaction(userID, user_input)
         current_cart.append(user_input)
         print(current_cart)
 
         new_values = { "$set": { "cart": current_cart } }
 
         output = await db.update_one(locator, new_values)
+        
         print(output)
         
         
@@ -463,6 +465,26 @@ async def add_cart(userID: str, cart: pydanticModels.Cart, quantity: int = Query
         print(e)
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="bad gateway")
     
+async def store_transaction(userID, userData, field: str):
+    locator = {"_id": ObjectId(userID)}
+    db = await get_mongo_db("tblusers")()
+    
+    try:
+        result: dict = await db.find_one(locator)
+        orders: list = result.get(field)
+        if not orders:
+            orders = []
+        #[{items: [{}], }]
+
+        orders.append(userData)
+        new_values = { "$set": { "orders": orders }}
+        await db.update_one(locator, new_values)
+        return True
+
+    except NetworkTimeout:
+        return False
+   
+    
 from payments import pay_with_stripe
 @app.post("/api/payments/Stripe/{userID}")
 async def Stripe_Payment(userID: str, data: pydanticModels.Order, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
@@ -472,26 +494,17 @@ async def Stripe_Payment(userID: str, data: pydanticModels.Order, db: AsyncIOMot
     if not session_url:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Something has gone wrong with your payment, please try again later")
     
-    #--- if the payment goes through we send to mongo
-    locator = {"_id": ObjectId(userID)}
-
-    try:
-        result: dict = await db.find_one(locator)
-        orders: list = result.get("orders")
-        if not orders:
-            orders = []
-        #[{items: [{}], }]
-
-        orders.append({"status": "In Progress", "date": time.time(), "items": data.cart, "price": data.amount})
-        new_values = { "$set": { "orders": orders }}
-        output = await db.update_one(locator, new_values)
-        print(output)
-
-    except NetworkTimeout:
-        raise HTTPException(status_code=status.HTTP_408_REQUEST_TIMEOUT)
-    
-
     return {"url": session_url}
+
+@app.post('/api/payments/Stripe/{userID}/store')
+async def store_stripe_transaction(userID: str, data: pydanticModels.Order):
+    userData = {"status": "Success", "date": time.time(), "items": data.cart, "price": data.amount}
+    result = await store_transaction(userID, userData, "orders")
+
+    if result == False:
+        return JSONResponse(content={"message": "Failed to update the data base"}, status_code=status.HTTP_400_BAD_REQUEST)
+    return JSONResponse(content={"message": "Database updated thank you"}, status_code=200)
+
 
     
 

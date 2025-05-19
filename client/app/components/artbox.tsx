@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router";
 import ConvertCurrency from "~/helpers/convert";
 import { currencyContext } from "~/contexts/currency";
 import { useEffect, useContext, useState, use } from "react";
+import { Image } from '@imagekit/react';
 
 export default function ArtBox({artwork}: {artwork: productType}){
     const Navigator = useNavigate()
@@ -33,13 +34,15 @@ export default function ArtBox({artwork}: {artwork: productType}){
         retrieveConvertedValues()
     },[selectedCurrencies.currentCurrency])
 
+    //className="artwork w-full h-full object-contain"
 
     return(
 
 <Link to={`/collection/${artwork["_id"]}`}>
     <div className="art-container">
         <div className="art-wrapper overflow-hidden relative w-full h-[300px] bg-gray-300 dark:bg-slate-500">
-            <img src={artwork["url"] ?? undefined} alt={`Art of ${artwork["title"]}`} className="artwork w-full h-full object-contain" />
+            <Image src={artwork["key"] ?? undefined} urlEndpoint="https://ik.imagekit.io/gp2sqgkfsChocoChoco" alt={`Art of ${artwork["title"]}`} className="artwork w-full h-full object-contain" />
+            
             {artwork["sale"] && (<p className="is-sale text-white absolute z-500 bottom-1 left-1 bg-black p-2 rounded-3xl ">Sale!</p>)}
             
         </div>

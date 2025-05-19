@@ -22,7 +22,8 @@ export type productType = {
     sale: boolean | undefined,
     desc: string,
     size: string,
-    copyright: string
+    copyright: string,
+    key: string
 }
 
 
