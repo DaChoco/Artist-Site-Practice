@@ -3,10 +3,13 @@ import { useState, useEffect, useRef } from "react"
 import { useNavigate, Link, useSearchParams } from "react-router"
 import UserCartService from "~/helpers/cartHandle"
 import { useCartContext } from "~/contexts/cart"
+import { jwtDecode } from "jwt-decode"
+import { useAuth } from "react-oidc-context";
 
 let debounce_timeout: any
 
 export default function Navbar() {
+    const cognito = useAuth();
     const [showClose, setShowClose] = useState<Boolean>(false)
     const [hideList, setHideList] = useState<Boolean>(false)
     const [autocomplete, setAutocomplete] = useState<Array<string>>([])
@@ -21,6 +24,13 @@ export default function Navbar() {
 
 
     const navigator = useNavigate()
+
+    const signOutRedirect = () => {
+        const clientId = "3tknboutgts9od3ino0duk9oap";
+        const logoutUri = "http://127.0.0.1:5173/";
+        const cognitoDomain = "https://af-south-1_fGfuufEwP.auth.af-south-1.amazoncognito.com";
+        window.location.href = `${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
+    };
 
     useEffect(() => {
 
@@ -38,9 +48,6 @@ export default function Navbar() {
 
     useEffect(() => {
         const handleClickoutside = (e: React.ChangeEvent<HTMLDivElement>) => {
-
-
-
 
         }
 
@@ -139,6 +146,43 @@ export default function Navbar() {
         navigator(`/collection/${itemID}`)
     }
 
+    useEffect(()=>{
+        
+        const handleCognitoAuth = async()=>{
+            if (cognito.isLoading) return;
+            console.log("REDIRECT")
+            console.log(cognito)
+            if (!cognito.user?.id_token){
+                return
+            }
+            
+
+            console.log(cognito.user?.session_state)
+            if (cognito.isAuthenticated){
+                //store the bare minimum info in your db
+               const decoded = jwtDecode(cognito.user?.id_token);
+               const payload = {userID: decoded.sub, refresh: cognito.user?.refresh_token}
+
+            const response = await fetch(`http://${import.meta.env.VITE_BACKEND_DOMAIN}:8000/api/Users/Cognito`, {method: "POST", headers: {"content-type": "application/json"}, body: JSON.stringify(payload)})
+            if (!response.ok){
+                console.log("CHECK THE BACKEND")
+                return
+            }
+            const data = await response.json()
+            
+
+            console.log(data)
+
+
+            }
+            else{
+                return
+            }
+
+        }
+        handleCognitoAuth()
+    }, [cognito.isAuthenticated, cognito.isLoading])
+
     return (
         <nav className="flex flex-row items-center justify-between bg-white dark:bg-[var(--dark-background-col)] p-4">
 
@@ -164,7 +208,7 @@ export default function Navbar() {
                         <ul className="absolute z-100 bg-white dark:bg-[var(--dark-background-col)] w-full left-0 lg:w-[101%] top-full md:left-[-0.5%] h-auto border-3 p-1 border-t-0 border-[var(--accent-col)]">
                             {autocomplete.map((item, index) => (
 
-                                <li onClick={() => { goToItem(itemID[index]) }} className="w-full p-2" key={index}>{item}</li>
+                                <li className="w-full p-2" key={index}><Link to={{pathname: `/collection/${itemID[index]}`}}>{item}</Link></li>
 
                             ))}
                         </ul>
@@ -188,7 +232,7 @@ export default function Navbar() {
                     (<svg onClick={handleShowSearchBar} xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" className="w-10 h-10 dark:fill-white my-auto ">
                         <path d="M784-120 532-372q-30 24-69 38t-83 14q-109 0-184.5-75.5T120-580q0-109 75.5-184.5T380-840q109 0 184.5 75.5T640-580q0 44-14 83t-38 69l252 252-56 56ZM380-400q75 0 127.5-52.5T560-580q0-75-52.5-127.5T380-760q-75 0-127.5 52.5T200-580q0 75 52.5 127.5T380-400Z" />
                     </svg>)}
-                <div className={`relative after:hidden hover:after:block after:absolute after:bottom-[-200%] after:left-[-400%] after:p-2 after:content-['Signing_in_means_your_cart_is_saved'] after:bg-[var(--light-hover-box-dark)] after:border-2 after:border-white after:w-[200px] after:h[200px]`}><svg className="w-10 h-10 dark:fill-white my-auto " xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z" /></svg></div>
+                <div onClick={()=>{cognito.signinPopup()}} className={`relative after:hidden hover:after:block after:absolute after:bottom-[-200%] after:left-[-400%] after:p-2 after:content-['Signing_in_means_your_cart_is_saved'] after:bg-[var(--light-hover-box-dark)] after:border-2 after:border-white after:w-[200px] after:h[200px]`}><svg className="w-10 h-10 dark:fill-white my-auto " xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z" /></svg></div>
                 
             <Link to={"/checkout"}><div className={`relative`}>
 

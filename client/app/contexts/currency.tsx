@@ -49,7 +49,6 @@ export default function CurrencySelector({children}: {children: React.ReactNode}
         const handlesetDefaultCurrency = async ()=>{
             const response = await fetch("../../countrymap.json")
             const data: CountryData[] = await response.json()
-            console.log("Currency Context: ", data)
 
             let arrDropData = []
             for (let i = 0; i<data.length; i++){
@@ -61,18 +60,17 @@ export default function CurrencySelector({children}: {children: React.ReactNode}
                 
             }
             }
-            console.log("DROPDOWN: ", arrDropData)
             setCountrydropdown(arrDropData)
 
             const userCountry: string = await findCountry()
 
-            console.log("User Country: ", userCountry)
+
 
             function handleSetStates(num: number){
                 setCurrentCurrency(data[num].currency)
                 setCountryCode(data[num].countrycode)
                 setCurrencySymbol(data[num].symbol)
-                console.log(data[num].symbol)
+
 
             }
 

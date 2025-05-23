@@ -250,6 +250,24 @@ async def register_user(data: pydanticModels.User, db: AsyncIOMotorCollection = 
                         status_code=200
                         )
 
+@app.post("/api/Users/Cognito")
+async def cognito_login_storing(request: Request, users: AsyncIOMotorCollection = Depends(get_mongo_db("tblusers"))):
+    body: dict = await request.json()
+    userID = body.get("userID")
+    refresh = body.get("refresh")
+
+    result = users.find_one({"_id": userID})
+    if not result:
+        
+        payload = {"_id": userID, "refresh_token": refresh}
+        await users.insert_one(payload)
+        return {"message": "Successful register Stored"}
+    else:
+        await users.update_one(
+            {"_id": userID},
+            {"$set": {"refresh": refresh}})
+        return {"message": "Successful register Stored"}
+
 @app.get("/api/Products/all")
 async def get_all_products(page: int = 1, db: AsyncIOMotorCollection = Depends(get_mongo_db("tblproducts"))):
     #paginated return of values
@@ -398,7 +416,7 @@ async def create_comment(product_id: str,
 @app.get("/api/Products/{product_id}/comments/view")
 async def show_comment(product_id: str, page: int = Query(default=1), reviews: AsyncIOMotorCollection = Depends(get_mongo_db("tblreviews"))):
     offset = (page-1)*9
-    cursor = reviews.find({"_id": ObjectId(product_id)}).skip(offset).sort("reviewID").limit(9)
+    cursor = reviews.find({"productID": product_id}).skip(offset).sort("reviewID").limit(9)
 
     comments = await cursor.to_list(9)
     fixed_comments = [fix_mongo_object_ids(comment) for comment in comments]

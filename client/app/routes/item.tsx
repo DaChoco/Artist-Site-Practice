@@ -26,6 +26,13 @@ export type productType = {
     key: string
 }
 
+type commentType = {
+    productID: string,
+    comment: string,
+    username: string,
+    rating: string
+}
+
 
 export default function Item(){
     const [art, setArt] = useState<productType>()
@@ -37,9 +44,12 @@ export default function Item(){
     const [quantity, setQuantity] = useState<number>(0)
 
     const {currentCart, setCurrentCart} = useCartContext()
+    const [comments, setComments] = useState<commentType[]>([])
+    const [showComment, setShowComment] = useState<Boolean>(false)
 
     const selectedCurrencies = useContext(currencyContext)
     const loadingcircle = useContext(loadingcontext)
+
 
     if (!selectedCurrencies || !loadingcircle){
         throw new Error("No currency context found")
@@ -74,10 +84,9 @@ export default function Item(){
         loadingcircle.setLoading(true)
         handleRetrieveArtSelected()
         loadingcircle.setLoading(false)
-        console.log(searchParams)
 
 
-    },[searchParams])
+    },[searchParams, productid])
 
     useEffect(()=>{
         const handleConvert = async()=>{
@@ -112,6 +121,26 @@ export default function Item(){
     console.log("Updated quantity:", quantity);
   }, [quantity]);
 
+  useEffect(()=>{
+    const handleRetrieveComment = async()=>{
+        if (!art){
+            return
+        }
+        const url = `http://${import.meta.env.VITE_BACKEND_DOMAIN}:8000/api/Products/${art._id}/comments/view`
+        console.log(url)
+        const response = await fetch(url)
+        console.log(response)
+        if (!response.ok){
+            setComments([])
+            return
+        }
+        const data = await response.json()
+        console.log("COMMENT:", data)
+        setComments(data)
+    }
+    handleRetrieveComment()
+  },[art])
+
     const handleAddtoCart = async()=>{
         const cart = new UserCartService(`http://${import.meta.env.VITE_BACKEND_DOMAIN}:8000/api`, "681a59494d22f6c4e0b5d1e6")
         if (!art ){
@@ -119,6 +148,10 @@ export default function Item(){
         }
 
         try{
+        if (quantity < 1){
+            alert("Type a correct quantity")
+            return
+        }
         const data = await cart.addToCart(art?.productID, art?.title, art?.price, art?.url, quantity)
         console.log(data)
         setCurrentCart(data)
@@ -174,16 +207,26 @@ export default function Item(){
     </section>
 
     <section id="comment-section" className="w-8/12 h-auto mx-auto p-2 flex flex-col space-y-5 ">
-    <h3 className="text-2xl">Comments and Reviews:</h3>
-        <div className="border-2 border-current p-5">
-            <span className="flex justify-between"><p>Guest#302145</p> <p>Rating:8/10</p></span>
-            <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Ad dolore dignissimos vitae voluptates odio ipsum ut molestias qui laudantium distinctio, debitis nobis quos, aliquid nostrum, laborum fugit omnis tempore accusantium. Optio nesciunt ab consequuntur deserunt, laboriosam exercitationem mollitia eveniet accusantium molestiae maxime sit? Eum illum itaque laboriosam, nemo autem quam!</p>
-        </div>
 
-        <div className="border-2 border-current p-5">
-            <span className="flex justify-between"><p>Guest#302145</p> <p>Rating:8/10</p></span>
-            <p>Lorem ipsum dolor sit, amet consectetur adipisicing elit. Ad dolore dignissimos vitae voluptates odio ipsum ut molestias qui laudantium distinctio, debitis nobis quos, aliquid nostrum, laborum fugit omnis tempore accusantium. Optio nesciunt ab consequuntur deserunt, laboriosam exercitationem mollitia eveniet accusantium molestiae maxime sit? Eum illum itaque laboriosam, nemo autem quam!</p>
+    
+    {comments.length > 1 && <h3 className="text-2xl">Comments and Reviews:</h3>}
+    {comments.map((comment, index)=> (
+        <div key={index} className="border-2 border-current p-5">
+            <span className="flex justify-between"><p>{comment.username}</p> <p>Rating: {comment.rating}</p></span>
+            <p>{comment.comment}</p>
         </div>
+    ))}
+
+    <button className="bg-[var(--accent-col)] border-4 p-2" type="button" onClick={()=> setShowComment(!showComment)}>Write a comment</button>
+
+
+    {showComment && (
+        <>
+        <textarea className="p-5" name="commentwrite" id="commentoutput" placeholder="Write a comment"></textarea>
+        <button className="bg-[var(--accent-col)] border-4 p-2 w-6/12 mx-auto">Publish Comment</button>
+        </>
+    )}
+
 
     </section>
 

@@ -13,6 +13,18 @@ import CartContextSelector from "./contexts/cart";
 
 import type { Route } from "./+types/root";
 import "./app.css";
+import { AuthProvider } from "react-oidc-context";
+
+const cognitoAuthConfig = {
+  authority: "https://cognito-idp.af-south-1.amazonaws.com/af-south-1_fGfuufEwP",
+  client_id: "3tknboutgts9od3ino0duk9oap",
+  redirect_uri: "https://d84l1y8p4kdic.cloudfront.net",
+  response_type: "code",
+  scope: "phone openid email",
+  automaticSilentRenew: true, 
+  loadUserInfo: true,
+  silent_redirect_uri: "http://localhost:5173/silent-renew.html"
+};
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -43,6 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
+      <AuthProvider {...cognitoAuthConfig}>
         <CurrencySelector>
           <CartContextSelector>
             <LoadingContextComponent>
@@ -51,6 +64,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </CartContextSelector>
 
         </CurrencySelector>
+      </AuthProvider>
         <ScrollRestoration />
         <Scripts />
       </body>

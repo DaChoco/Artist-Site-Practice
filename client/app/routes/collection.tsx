@@ -1,6 +1,6 @@
 import type { Route } from "./+types/collection";
 import "../app.css"
-import { useSearchParams, Link, useNavigate } from "react-router";
+import { useSearchParams, Link, useNavigate, useParams } from "react-router";
 import { useState, useEffect, useContext } from "react";
 
 import type { productType } from "./item";
